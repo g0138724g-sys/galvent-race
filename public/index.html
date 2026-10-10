@@ -398,194 +398,158 @@ function makeMyMarker(){
 function createPig(name, index, total, laneZ, startX, finishX){
   const g = new THREE.Group();
 
-  const skin = new THREE.MeshStandardMaterial({color:0xf4b29a, roughness:0.9, metalness:0.02});
-  const skin2 = new THREE.MeshStandardMaterial({color:0xe89a85, roughness:0.92, metalness:0.02});
-  const noseMat = new THREE.MeshStandardMaterial({color:0xd97c75, roughness:0.95});
-  const eyeWhite = new THREE.MeshStandardMaterial({color:0xffffff});
-  const eyeBlack = new THREE.MeshStandardMaterial({color:0x111111});
-  const hoofMat = new THREE.MeshStandardMaterial({color:0x6f4a3b, roughness:1});
-  const shoeMat = new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.9});
-  const soleMat = new THREE.MeshStandardMaterial({color:0xe04c4c, roughness:0.9});
+  const skinTones=[0xf5b59f,0xe4a07f,0xc78f72,0xf2c0a7];
+  const outfitColors=[0x3f7ee8,0x2eae63,0xe84e5b,0xf2a930,0x8656d9,0x18a7b8,0xe66fa0,0x74a943];
+  const shortsColors=[0x2d5fb8,0x19874a,0xb93645,0xd37e13,0x6238af,0x117a86,0xb84b77,0x557d31];
+  const skin=new THREE.MeshStandardMaterial({color:skinTones[index%skinTones.length],roughness:0.88,metalness:0.02});
+  const skin2=new THREE.MeshStandardMaterial({color:0xe98f82,roughness:0.9});
+  const outfit=new THREE.MeshStandardMaterial({color:outfitColors[index%outfitColors.length],roughness:0.82});
+  const shortsMat=new THREE.MeshStandardMaterial({color:shortsColors[index%shortsColors.length],roughness:0.86});
+  const white=new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.8});
+  const black=new THREE.MeshStandardMaterial({color:0x151515,roughness:0.9});
+  const sole=new THREE.MeshStandardMaterial({color:0xe34848,roughness:0.9});
 
-  const outfitColors = [0x4f8cff,0x3ec46d,0xf04f62,0xffb340,0xa95cff,0x00b8b8,0xff7aa2,0x8bc34a];
-  const outfit = new THREE.MeshStandardMaterial({
-    color: outfitColors[index % outfitColors.length],
-    roughness: 0.85,
-    metalness: 0.03
-  });
+  const torso=new THREE.Mesh(new THREE.SphereGeometry(0.66,24,24),skin);
+  torso.scale.set(0.95,1.15,0.86);
+  torso.position.set(0,1.28,0);
+  torso.castShadow=true;
+  g.add(torso);
 
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.72, 24, 24), outfit);
-  body.scale.set(1.05, 1.15, 0.9);
-  body.position.set(0, 0.08, 0);
-  body.castShadow = true;
-  body.receiveShadow = true;
-  g.add(body);
+  const shirt=new THREE.Mesh(new THREE.SphereGeometry(0.61,24,24),outfit);
+  shirt.scale.set(0.98,0.9,0.9);
+  shirt.position.set(0.02,1.34,0);
+  shirt.castShadow=true;
+  g.add(shirt);
 
-  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.48, 20, 20), skin);
-  belly.scale.set(1.0, 1.08, 0.78);
-  belly.position.set(0.08, -0.08, 0);
-  belly.castShadow = true;
+  const belly=new THREE.Mesh(new THREE.SphereGeometry(0.42,20,20),skin);
+  belly.scale.set(0.95,0.88,0.82);
+  belly.position.set(0.18,1.15,0);
+  belly.castShadow=true;
   g.add(belly);
 
-  const chest = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 20), outfit);
-  chest.scale.set(0.95, 0.95, 0.82);
-  chest.position.set(0.22, 0.24, 0);
-  chest.castShadow = true;
-  g.add(chest);
+  const shorts=new THREE.Mesh(new THREE.SphereGeometry(0.48,20,20),shortsMat);
+  shorts.scale.set(1.02,0.62,0.9);
+  shorts.position.set(-0.04,0.92,0);
+  shorts.castShadow=true;
+  g.add(shorts);
 
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.48, 24, 24), skin);
-  head.scale.set(1.0, 0.95, 0.95);
-  head.position.set(0.88, 0.5, 0);
-  head.castShadow = true;
-  head.receiveShadow = true;
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.48,24,24),skin);
+  head.scale.set(1.08,0.98,0.94);
+  head.position.set(0.7,2.0,0);
+  head.castShadow=true;
   g.add(head);
 
-  const snout = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.26, 18), skin2);
-  snout.rotation.z = Math.PI / 2;
-  snout.position.set(1.24, 0.34, 0);
-  snout.castShadow = true;
+  const snout=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.19,0.32,20),skin2);
+  snout.rotation.z=Math.PI/2;
+  snout.position.set(1.1,1.9,0);
+  snout.castShadow=true;
   g.add(snout);
 
-  const nostril1 = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 10), noseMat);
-  const nostril2 = nostril1.clone();
-  nostril1.position.set(1.36, 0.34, -0.05);
-  nostril2.position.set(1.36, 0.34, 0.05);
-  g.add(nostril1, nostril2);
+  const nostrilGeo=new THREE.SphereGeometry(0.028,10,10);
+  const nostrilMat=new THREE.MeshStandardMaterial({color:0x7a3e45,roughness:0.95});
+  const nostril1=new THREE.Mesh(nostrilGeo,nostrilMat);
+  const nostril2=nostril1.clone();
+  nostril1.position.set(1.26,1.9,-0.055);
+  nostril2.position.set(1.26,1.9,0.055);
+  g.add(nostril1,nostril2);
 
-  const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 12), eyeWhite);
-  const eye2 = eye1.clone();
-  eye1.position.set(1.02, 0.55, -0.16);
-  eye2.position.set(1.02, 0.55, 0.16);
-  g.add(eye1, eye2);
+  const eyeGeo=new THREE.SphereGeometry(0.065,12,12);
+  const eye1=new THREE.Mesh(eyeGeo,white);
+  const eye2=eye1.clone();
+  eye1.position.set(0.91,2.1,-0.17);
+  eye2.position.set(0.91,2.1,0.17);
+  const pupil1=new THREE.Mesh(new THREE.SphereGeometry(0.027,10,10),black);
+  const pupil2=pupil1.clone();
+  pupil1.position.set(0.965,2.09,-0.17);
+  pupil2.position.set(0.965,2.09,0.17);
+  g.add(eye1,eye2,pupil1,pupil2);
 
-  const pupil1 = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 10), eyeBlack);
-  const pupil2 = pupil1.clone();
-  pupil1.position.set(1.08, 0.53, -0.16);
-  pupil2.position.set(1.08, 0.53, 0.16);
-  g.add(pupil1, pupil2);
+  const earGeo=new THREE.ConeGeometry(0.12,0.28,4);
+  const earL=new THREE.Mesh(earGeo,skin2);
+  const earR=earL.clone();
+  earL.position.set(0.5,2.42,-0.22);
+  earR.position.set(0.5,2.42,0.22);
+  earL.rotation.z=-0.55; earL.rotation.x=-0.25;
+  earR.rotation.z=-0.55; earR.rotation.x=0.25;
+  g.add(earL,earR);
 
-  const earGeo = new THREE.ConeGeometry(0.11, 0.24, 4);
-  const earL = new THREE.Mesh(earGeo, skin2);
-  const earR = earL.clone();
-  earL.position.set(0.72, 0.9, -0.2);
-  earR.position.set(0.72, 0.9, 0.2);
-  earL.rotation.z = -0.65;
-  earL.rotation.x = -0.25;
-  earR.rotation.z = -0.65;
-  earR.rotation.x = 0.25;
-  g.add(earL, earR);
+  const armPivotL=new THREE.Group();
+  const armPivotR=new THREE.Group();
+  armPivotL.position.set(0.18,1.65,-0.43);
+  armPivotR.position.set(0.18,1.65,0.43);
+  g.add(armPivotL,armPivotR);
 
-  const armPivotL = new THREE.Group();
-  const armPivotR = new THREE.Group();
-  armPivotL.position.set(0.36, 0.22, -0.36);
-  armPivotR.position.set(0.36, 0.22, 0.36);
-  g.add(armPivotL, armPivotR);
-
-  const armGeo = new THREE.CapsuleGeometry(0.08, 0.42, 6, 10);
-  const leftArm = new THREE.Mesh(armGeo, skin);
-  const rightArm = new THREE.Mesh(armGeo, skin);
-  leftArm.rotation.z = 0.15;
-  rightArm.rotation.z = -0.15;
-  leftArm.position.set(0, -0.28, 0);
-  rightArm.position.set(0, -0.28, 0);
-  leftArm.castShadow = true;
-  rightArm.castShadow = true;
+  const armGeo=new THREE.CapsuleGeometry(0.085,0.42,6,10);
+  const leftArm=new THREE.Mesh(armGeo,skin);
+  const rightArm=new THREE.Mesh(armGeo,skin);
+  leftArm.position.y=-0.3;
+  rightArm.position.y=-0.3;
+  leftArm.castShadow=true;
+  rightArm.castShadow=true;
   armPivotL.add(leftArm);
   armPivotR.add(rightArm);
 
-  const handL = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), hoofMat);
-  const handR = handL.clone();
-  handL.position.set(0, -0.56, 0);
-  handR.position.set(0, -0.56, 0);
-  leftArm.add(handL);
-  rightArm.add(handR);
+  const handGeo=new THREE.SphereGeometry(0.09,12,12);
+  const handL=new THREE.Mesh(handGeo,skin);
+  const handR=handL.clone();
+  handL.position.set(0,-0.58,0);
+  handR.position.set(0,-0.58,0);
+  armPivotL.add(handL);
+  armPivotR.add(handR);
 
-  const legPivotL = new THREE.Group();
-  const legPivotR = new THREE.Group();
-  legPivotL.position.set(-0.08, -0.48, -0.16);
-  legPivotR.position.set(-0.08, -0.48, 0.16);
-  g.add(legPivotL, legPivotR);
+  const legPivotL=new THREE.Group();
+  const legPivotR=new THREE.Group();
+  legPivotL.position.set(-0.08,0.88,-0.2);
+  legPivotR.position.set(-0.08,0.88,0.2);
+  g.add(legPivotL,legPivotR);
 
-  const upperLegGeo = new THREE.CapsuleGeometry(0.1, 0.34, 6, 10);
-  const lowerLegGeo = new THREE.CapsuleGeometry(0.085, 0.28, 6, 10);
-
-  const leftLeg = new THREE.Group();
-  const rightLeg = new THREE.Group();
-
-  const leftThigh = new THREE.Mesh(upperLegGeo, outfit);
-  const rightThigh = new THREE.Mesh(upperLegGeo, outfit);
-  leftThigh.position.set(0, -0.18, 0);
-  rightThigh.position.set(0, -0.18, 0);
-  leftThigh.castShadow = true;
-  rightThigh.castShadow = true;
-  leftLeg.add(leftThigh);
-  rightLeg.add(rightThigh);
-
-  const leftShin = new THREE.Mesh(lowerLegGeo, skin);
-  const rightShin = new THREE.Mesh(lowerLegGeo, skin);
-  leftShin.position.set(0, -0.46, 0);
-  rightShin.position.set(0, -0.46, 0);
-  leftShin.castShadow = true;
-  rightShin.castShadow = true;
-  leftLeg.add(leftShin);
-  rightLeg.add(rightShin);
-
-  const leftShoe = new THREE.Group();
-  const rightShoe = new THREE.Group();
-
-  const shoeBodyL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.1, 0.16), shoeMat);
-  const shoeBodyR = shoeBodyL.clone();
-  shoeBodyL.position.set(0.08, -0.15, 0);
-  shoeBodyR.position.set(0.08, -0.15, 0);
-  leftShoe.add(shoeBodyL);
-  rightShoe.add(shoeBodyR);
-
-  const shoeFrontL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 12), soleMat);
-  const shoeFrontR = shoeFrontL.clone();
-  shoeFrontL.scale.set(1.25, 0.65, 0.9);
-  shoeFrontR.scale.set(1.25, 0.65, 0.9);
-  shoeFrontL.position.set(0.17, -0.13, 0);
-  shoeFrontR.position.set(0.17, -0.13, 0);
-  leftShoe.add(shoeFrontL);
-  rightShoe.add(shoeFrontR);
-
-  leftShoe.position.set(0, -0.68, 0);
-  rightShoe.position.set(0, -0.68, 0);
-
-  leftLeg.add(leftShoe);
-  rightLeg.add(rightShoe);
-
+  const legGeo=new THREE.CapsuleGeometry(0.1,0.48,6,10);
+  const leftLeg=new THREE.Mesh(legGeo,skin);
+  const rightLeg=new THREE.Mesh(legGeo,skin);
+  leftLeg.position.y=-0.38;
+  rightLeg.position.y=-0.38;
+  leftLeg.castShadow=true;
+  rightLeg.castShadow=true;
   legPivotL.add(leftLeg);
   legPivotR.add(rightLeg);
 
-  const tail = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.025, 8, 18), skin2);
-  tail.position.set(-0.73, 0.1, 0);
-  tail.rotation.y = Math.PI / 2;
-  tail.castShadow = true;
+  const shoeGeo=new THREE.BoxGeometry(0.32,0.12,0.18);
+  const shoeL=new THREE.Mesh(shoeGeo,white);
+  const shoeR=shoeL.clone();
+  shoeL.position.set(0.11,-0.72,0);
+  shoeR.position.set(0.11,-0.72,0);
+  legPivotL.add(shoeL);
+  legPivotR.add(shoeR);
+
+  const toeGeo=new THREE.SphereGeometry(0.095,12,12);
+  const toeL=new THREE.Mesh(toeGeo,sole);
+  const toeR=toeL.clone();
+  toeL.scale.set(1.4,0.65,0.9);
+  toeR.scale.set(1.4,0.65,0.9);
+  toeL.position.set(0.25,-0.71,0);
+  toeR.position.set(0.25,-0.71,0);
+  legPivotL.add(toeL);
+  legPivotR.add(toeR);
+
+  const tail=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.027,8,18),skin2);
+  tail.position.set(-0.69,1.25,0);
+  tail.rotation.y=Math.PI/2;
   g.add(tail);
 
-  const label = makeLabel(name);
-  label.position.set(0, 1.9, 0);
+  const label=makeLabel(name);
+  label.position.set(0,3.02,0);
   g.add(label);
 
-  const myMarker = makeMyMarker();
+  const myMarker=makeMyMarker();
+  myMarker.position.set(0,4.15,0);
   g.add(myMarker);
 
-  const pigScale = total > 120 ? 0.34 : total > 90 ? 0.4 : total > 60 ? 0.48 : 0.56;
-  const baseY = -1.32 + 1.32 * pigScale;
+  const pigScale=total>120?0.28:total>90?0.32:total>60?0.38:0.48;
+  const baseY=-1.24;
   g.scale.setScalar(pigScale);
-  g.position.set(startX, baseY, laneZ);
-  g.rotation.y = 0;
-  g.userData = {
-    name,index,startX,finishX,laneZ,baseY,
-    leftArm: armPivotL,
-    rightArm: armPivotR,
-    leftLeg: legPivotL,
-    rightLeg: legPivotR,
-    body,head,label,tail,myMarker,
-    chest,belly,
-    seed:index*0.73+1.1
-  };
+  g.position.set(startX,baseY,laneZ);
+  g.rotation.y=0;
+  g.userData={name,index,startX,finishX,laneZ,baseY,leftArm:armPivotL,rightArm:armPivotR,leftLeg:legPivotL,rightLeg:legPivotR,body:torso,head,label,tail,myMarker,shirt,shorts,seed:index*0.73+1.1};
   return g;
 }
 
@@ -768,10 +732,10 @@ function updateCamera(){
   const pos = new THREE.Vector3();
   pig.getWorldPosition(pos);
 
-  const desired = new THREE.Vector3(pos.x - 7.5, 4.8, pos.z + 7.5);
+  const desired = new THREE.Vector3(pos.x - 1.8, pos.y + 2.6, pos.z + 6.4);
   camera.position.lerp(desired, 0.08);
 
-  const look = new THREE.Vector3(pos.x + 2.8, 0.15, pos.z);
+  const look = new THREE.Vector3(pos.x + 1.5, pos.y + 0.7, pos.z);
   camera.lookAt(look);
 }
 
@@ -815,73 +779,68 @@ function updateOverlay(){
 }
 
 function animatePig(pig, elapsedSec){
-  const data = pig.userData;
-  const total = pigs.length || 1;
-  const rankMap = new Map((state.race?.order || []).map(x=>[x.nickname,x.place]));
-  const place = rankMap.get(data.name) || total;
+  const data=pig.userData;
+  const total=pigs.length||1;
+  const rankMap=new Map((state.race?.order||[]).map(x=>[x.nickname,x.place]));
+  const place=rankMap.get(data.name)||total;
 
-  let progress = 0;
+  let progress=0;
   if(state.race){
-    progress = Math.min(1, Math.max(0, (Date.now() - state.race.startedAt) / durationMs));
+    progress=Math.min(1,Math.max(0,(Date.now()-state.race.startedAt)/durationMs));
   }
 
-  const runSpeed = 12;
-  const phase = elapsedSec * runSpeed + data.seed * 3.1;
-  let x = data.startX;
-  let winnerDance = false;
+  const runSpeed=10.8;
+  const phase=elapsedSec*runSpeed+data.seed*3.1;
+  let x=data.startX;
+  let winnerDance=false;
 
   if(state.race){
-    const finishBias = place === 1 ? 1.02 : 0.9 - ((place-2) / Math.max(1,total-1)) * 0.24;
-    const wobble = Math.sin(elapsedSec * 3.8 + data.seed * 5) * (1-progress) * 0.55;
-    const pct = progress < 1
-      ? Math.max(0, Math.min(1, progress * finishBias + wobble * 0.02))
-      : (place === 1 ? 1.03 : Math.max(0.82, 0.98 - place * 0.0026));
-
-    x = THREE.MathUtils.lerp(data.startX, data.finishX, pct);
-
-    if(progress >= 1 && place === 1){
-      winnerDance = true;
-      x = data.finishX + 0.8;
-    }
+    const finishBias=place===1?1.02:0.9-((place-2)/Math.max(1,total-1))*0.24;
+    const wobble=Math.sin(elapsedSec*3.8+data.seed*5)*(1-progress)*0.55;
+    const pct=progress<1?Math.max(0,Math.min(1,progress*finishBias+wobble*0.02)):(place===1?1.03:Math.max(0.82,0.98-place*0.0026));
+    x=THREE.MathUtils.lerp(data.startX,data.finishX,pct);
+    if(progress>=1&&place===1){winnerDance=true;x=data.finishX+0.8;}
   }
 
-  pig.position.x = x;
-  pig.position.z = data.laneZ;
+  pig.position.x=x;
+  pig.position.z=data.laneZ;
 
   if(winnerDance){
-    pig.position.y = Math.abs(Math.sin(elapsedSec * 7)) * 0.45;
-    pig.rotation.y = -Math.PI/2 + Math.sin(elapsedSec * 8) * 0.6;
-    pig.rotation.z = Math.sin(elapsedSec * 10) * 0.06;
-    data.leftArm.rotation.z = Math.sin(elapsedSec * 12) * 1.2 + 0.7;
-    data.rightArm.rotation.z = -Math.sin(elapsedSec * 12) * 1.2 - 0.7;
-    data.leftLeg.rotation.z = Math.sin(elapsedSec * 10) * 0.35;
-    data.rightLeg.rotation.z = -Math.sin(elapsedSec * 10) * 0.35;
-    data.body.rotation.z = Math.sin(elapsedSec * 12) * 0.08;
-    data.head.rotation.z = -Math.sin(elapsedSec * 12) * 0.07;
+    pig.position.y=data.baseY+Math.abs(Math.sin(elapsedSec*6.5))*0.18;
+    pig.rotation.y=Math.sin(elapsedSec*6)*0.45;
+    pig.rotation.z=Math.sin(elapsedSec*9)*0.08;
+    data.leftArm.rotation.z=Math.sin(elapsedSec*10)*1.15+0.7;
+    data.rightArm.rotation.z=-Math.sin(elapsedSec*10)*1.15-0.7;
+    data.leftLeg.rotation.z=Math.sin(elapsedSec*8)*0.45;
+    data.rightLeg.rotation.z=-Math.sin(elapsedSec*8)*0.45;
+    data.body.rotation.z=Math.sin(elapsedSec*10)*0.06;
+    data.head.rotation.z=-Math.sin(elapsedSec*10)*0.05;
   }else{
-     }else{
-    const moving = state.race ? 1 : 0.35;
-    pig.position.y = data.baseY + Math.abs(Math.sin(phase)) * 0.04 * moving;
-    pig.rotation.y = 0;
-    pig.rotation.z = -0.12;
+    const moving=state.race?1:0.18;
+    const stride=Math.sin(phase);
+    const bounce=Math.abs(Math.sin(phase*2));
 
-    data.leftLeg.rotation.z = Math.sin(phase) * 1.05 * moving;
-    data.rightLeg.rotation.z = -Math.sin(phase) * 1.05 * moving;
+    pig.position.y=data.baseY+bounce*0.025*moving;
+    pig.rotation.y=0;
+    pig.rotation.z=-0.11;
 
-    data.leftArm.rotation.z = -Math.sin(phase) * 0.95 * moving - 0.25;
-    data.rightArm.rotation.z = Math.sin(phase) * 0.95 * moving + 0.25;
+    data.leftLeg.rotation.z=stride*0.95*moving;
+    data.rightLeg.rotation.z=-stride*0.95*moving;
+    data.leftArm.rotation.z=-stride*0.9*moving-0.25;
+    data.rightArm.rotation.z=stride*0.9*moving+0.25;
 
-    data.body.rotation.z = -0.16 + Math.sin(phase * 2) * 0.03 * moving;
-    data.body.rotation.x = Math.cos(phase * 2) * 0.02 * moving;
-    data.head.rotation.z = 0.08 + Math.sin(phase * 1.6) * 0.04 * moving;
-    data.head.rotation.x = -0.08;
+    data.leftLeg.rotation.x=0.08*Math.cos(phase)*moving;
+    data.rightLeg.rotation.x=-0.08*Math.cos(phase)*moving;
+    data.leftArm.rotation.x=-0.06*Math.cos(phase)*moving;
+    data.rightArm.rotation.x=0.06*Math.cos(phase)*moving;
+
+    data.body.rotation.z=-0.11+Math.sin(phase*2)*0.018*moving;
+    data.head.rotation.z=0.08+Math.sin(phase*1.5)*0.025*moving;
+    data.head.rotation.x=-0.08;
   }
 
-  data.tail.rotation.x = elapsedSec * 8 + data.seed;
-  data.label.position.x = 0;
-  data.label.position.y = 1.85;
+  data.tail.rotation.x=elapsedSec*7+data.seed;
 }
-
 
 function updateAllCamera(){
   if(cameraMode !== 'all') return;
