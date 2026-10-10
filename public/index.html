@@ -323,11 +323,15 @@ function setSub(t){ $('substatus').textContent = t; }
 
 function initScene(){
   const canvas = $('scene');
-  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias:false,
+    alpha:true,
+    powerPreference:'high-performance'
+  });
+  renderer.setPixelRatio(1);
   renderer.setSize($('sceneWrap').clientWidth, $('sceneWrap').clientHeight, false);
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = false;
 
   scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0xdff6ff, 40, 140);
@@ -348,7 +352,7 @@ function initScene(){
 
   const dir = new THREE.DirectionalLight(0xffffff, 1.25);
   dir.position.set(15, 30, 16);
-  dir.castShadow = true;
+  dir.castShadow = false;
   dir.shadow.mapSize.set(2048,2048);
   dir.shadow.camera.left = -80;
   dir.shadow.camera.right = 80;
@@ -529,9 +533,9 @@ function createPig(name, index, total, laneZ, startX, finishX){
     }
     if(o.isMesh){
       o.visible = true;
-      o.castShadow = true;
-      o.receiveShadow = true;
-      o.frustumCulled = false;
+      o.castShadow = false;
+      o.receiveShadow = false;
+      o.frustumCulled = true;
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       mats.filter(Boolean).forEach(m=>{
         m.visible = true;
@@ -644,7 +648,7 @@ function buildWorld(){
   );
   grass.rotation.x = -Math.PI/2;
   grass.position.y = -1.42;
-  grass.receiveShadow = true;
+  grass.receiveShadow = false;
   worldGroup.add(grass);
 
   const track = new THREE.Mesh(
@@ -653,7 +657,7 @@ function buildWorld(){
   );
   track.rotation.x = -Math.PI/2;
   track.position.y = -1.35;
-  track.receiveShadow = true;
+  track.receiveShadow = false;
   worldGroup.add(track);
 
   for(let i=0;i<count;i++){
@@ -882,6 +886,17 @@ function animatePig(pig, elapsedSec){
   pig.position.x = x;
   pig.position.z = data.laneZ;
 
+  // 참가자가 많을 때는 모든 90~200마리의 뼈를 매 프레임 계산하지 않는다.
+  // TOP 12 + 내 돼지만 정교한 사람 달리기 모션, 나머지는 가벼운 전신 모션.
+  const detailedMotion = total <= 30 || place <= 12 || data.name === selectedPigName;
+  if(!detailedMotion && !winnerDance){
+    const moving = state.race ? 1 : 0.18;
+    pig.position.y = data.baseY + Math.max(0,Math.sin(phase*2))*0.025*moving;
+    pig.rotation.y = 0;
+    pig.rotation.z = -0.02 + Math.sin(phase)*0.018*moving;
+    return;
+  }
+
   if(winnerDance){
     pig.position.y = data.baseY + Math.abs(Math.sin(elapsedSec*6.5))*0.22;
     pig.rotation.y = Math.sin(elapsedSec*5)*0.45;
@@ -989,16 +1004,31 @@ function updateAllCamera(){
   camera.lookAt(focusX + 1.5,0.25,0);
 }
 
-function animate(){
+let lastPerfFrame = 0;
+let perfTick = 0;
+
+function animate(now=0){
   requestAnimationFrame(animate);
+
+  // 30fps 제한: 참가자가 많아도 브라우저가 과하게 GPU/CPU를 쓰지 않게 함
+  if(now - lastPerfFrame < 33) return;
+  lastPerfFrame = now;
+  perfTick++;
+
   const t = clock.getElapsedTime();
   updateOverlay();
   pigs.forEach(p => animatePig(p, t));
   updateCamera();
   updateAllCamera();
-  updateMyPigBadge();
-  renderTop10();
-  updateNameLabels();
+
+  if(perfTick % 3 === 0){
+    updateNameLabels();
+  }
+  if(perfTick % 6 === 0){
+    updateMyPigBadge();
+    renderTop10();
+  }
+
   renderer.render(scene, camera);
 }
 
