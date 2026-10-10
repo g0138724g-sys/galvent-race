@@ -397,94 +397,193 @@ function makeMyMarker(){
 
 function createPig(name, index, total, laneZ, startX, finishX){
   const g = new THREE.Group();
-  const pink = new THREE.MeshStandardMaterial({color:0xffa4bf, roughness:0.8, metalness:0.05});
-  const pink2 = new THREE.MeshStandardMaterial({color:0xff8fb0, roughness:0.85});
-  const dark = new THREE.MeshStandardMaterial({color:0x55384a, roughness:0.9});
-  const white = new THREE.MeshStandardMaterial({color:0xffffff});
-  const black = new THREE.MeshStandardMaterial({color:0x111111});
 
-  const body = new THREE.Mesh(new THREE.BoxGeometry(1.2,1.1,0.95), pink);
+  const skin = new THREE.MeshStandardMaterial({color:0xf4b29a, roughness:0.9, metalness:0.02});
+  const skin2 = new THREE.MeshStandardMaterial({color:0xe89a85, roughness:0.92, metalness:0.02});
+  const noseMat = new THREE.MeshStandardMaterial({color:0xd97c75, roughness:0.95});
+  const eyeWhite = new THREE.MeshStandardMaterial({color:0xffffff});
+  const eyeBlack = new THREE.MeshStandardMaterial({color:0x111111});
+  const hoofMat = new THREE.MeshStandardMaterial({color:0x6f4a3b, roughness:1});
+  const shoeMat = new THREE.MeshStandardMaterial({color:0xffffff, roughness:0.9});
+  const soleMat = new THREE.MeshStandardMaterial({color:0xe04c4c, roughness:0.9});
+
+  const outfitColors = [0x4f8cff,0x3ec46d,0xf04f62,0xffb340,0xa95cff,0x00b8b8,0xff7aa2,0x8bc34a];
+  const outfit = new THREE.MeshStandardMaterial({
+    color: outfitColors[index % outfitColors.length],
+    roughness: 0.85,
+    metalness: 0.03
+  });
+
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.72, 24, 24), outfit);
+  body.scale.set(1.05, 1.15, 0.9);
+  body.position.set(0, 0.08, 0);
   body.castShadow = true;
   body.receiveShadow = true;
   g.add(body);
 
-  const belly = new THREE.Mesh(new THREE.BoxGeometry(0.9,0.55,0.75), pink2);
-  belly.position.set(0,-0.15,0);
+  const belly = new THREE.Mesh(new THREE.SphereGeometry(0.48, 20, 20), skin);
+  belly.scale.set(1.0, 1.08, 0.78);
+  belly.position.set(0.08, -0.08, 0);
   belly.castShadow = true;
   g.add(belly);
 
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.82,0.78,0.78), pink);
-  head.position.set(0.9,0.25,0);
+  const chest = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 20), outfit);
+  chest.scale.set(0.95, 0.95, 0.82);
+  chest.position.set(0.22, 0.24, 0);
+  chest.castShadow = true;
+  g.add(chest);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.48, 24, 24), skin);
+  head.scale.set(1.0, 0.95, 0.95);
+  head.position.set(0.88, 0.5, 0);
   head.castShadow = true;
+  head.receiveShadow = true;
   g.add(head);
 
-  const snout = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.24,0.38), pink2);
-  snout.position.set(1.4,0.11,0);
+  const snout = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.26, 18), skin2);
+  snout.rotation.z = Math.PI / 2;
+  snout.position.set(1.24, 0.34, 0);
   snout.castShadow = true;
   g.add(snout);
 
-  const nose1 = new THREE.Mesh(new THREE.SphereGeometry(0.03,12,12), dark);
-  const nose2 = nose1.clone();
-  nose1.position.set(1.56,0.12,-0.07);
-  nose2.position.set(1.56,0.12,0.07);
-  g.add(nose1,nose2);
+  const nostril1 = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 10), noseMat);
+  const nostril2 = nostril1.clone();
+  nostril1.position.set(1.36, 0.34, -0.05);
+  nostril2.position.set(1.36, 0.34, 0.05);
+  g.add(nostril1, nostril2);
 
-  const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.06,12,12), white);
+  const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 12), eyeWhite);
   const eye2 = eye1.clone();
-  eye1.position.set(1.18,0.34,-0.18);
-  eye2.position.set(1.18,0.34,0.18);
-  const pupil1 = new THREE.Mesh(new THREE.SphereGeometry(0.025,10,10), black);
+  eye1.position.set(1.02, 0.55, -0.16);
+  eye2.position.set(1.02, 0.55, 0.16);
+  g.add(eye1, eye2);
+
+  const pupil1 = new THREE.Mesh(new THREE.SphereGeometry(0.03, 10, 10), eyeBlack);
   const pupil2 = pupil1.clone();
-  pupil1.position.set(1.23,0.32,-0.18);
-  pupil2.position.set(1.23,0.32,0.18);
-  g.add(eye1,eye2,pupil1,pupil2);
+  pupil1.position.set(1.08, 0.53, -0.16);
+  pupil2.position.set(1.08, 0.53, 0.16);
+  g.add(pupil1, pupil2);
 
-  const earGeo = new THREE.ConeGeometry(0.13,0.28,4);
-  const earL = new THREE.Mesh(earGeo, pink2);
+  const earGeo = new THREE.ConeGeometry(0.11, 0.24, 4);
+  const earL = new THREE.Mesh(earGeo, skin2);
   const earR = earL.clone();
-  earL.position.set(0.62,0.78,-0.22);
-  earR.position.set(0.62,0.78,0.22);
-  earL.rotation.z = -0.6; earL.rotation.x = -0.3;
-  earR.rotation.z = -0.6; earR.rotation.x = 0.3;
-  g.add(earL,earR);
+  earL.position.set(0.72, 0.9, -0.2);
+  earR.position.set(0.72, 0.9, 0.2);
+  earL.rotation.z = -0.65;
+  earL.rotation.x = -0.25;
+  earR.rotation.z = -0.65;
+  earR.rotation.x = 0.25;
+  g.add(earL, earR);
 
-  const armGeo = new THREE.BoxGeometry(0.22,0.72,0.22);
-  const legGeo = new THREE.BoxGeometry(0.28,0.92,0.28);
+  const armPivotL = new THREE.Group();
+  const armPivotR = new THREE.Group();
+  armPivotL.position.set(0.36, 0.22, -0.36);
+  armPivotR.position.set(0.36, 0.22, 0.36);
+  g.add(armPivotL, armPivotR);
 
-  const leftArm = new THREE.Mesh(armGeo, pink2);
-  const rightArm = leftArm.clone();
-  leftArm.position.set(0.34,-0.2,-0.42);
-  rightArm.position.set(0.34,-0.2,0.42);
+  const armGeo = new THREE.CapsuleGeometry(0.08, 0.42, 6, 10);
+  const leftArm = new THREE.Mesh(armGeo, skin);
+  const rightArm = new THREE.Mesh(armGeo, skin);
+  leftArm.rotation.z = 0.15;
+  rightArm.rotation.z = -0.15;
+  leftArm.position.set(0, -0.28, 0);
+  rightArm.position.set(0, -0.28, 0);
+  leftArm.castShadow = true;
+  rightArm.castShadow = true;
+  armPivotL.add(leftArm);
+  armPivotR.add(rightArm);
 
-  const leftLeg = new THREE.Mesh(legGeo, pink2);
-  const rightLeg = leftLeg.clone();
-  leftLeg.position.set(-0.12,-0.92,-0.18);
-  rightLeg.position.set(-0.12,-0.92,0.18);
+  const handL = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), hoofMat);
+  const handR = handL.clone();
+  handL.position.set(0, -0.56, 0);
+  handR.position.set(0, -0.56, 0);
+  leftArm.add(handL);
+  rightArm.add(handR);
 
-  [leftArm,rightArm,leftLeg,rightLeg].forEach(m=>{
-    m.castShadow = true;
-    m.receiveShadow = true;
-    g.add(m);
-  });
+  const legPivotL = new THREE.Group();
+  const legPivotR = new THREE.Group();
+  legPivotL.position.set(-0.08, -0.48, -0.16);
+  legPivotR.position.set(-0.08, -0.48, 0.16);
+  g.add(legPivotL, legPivotR);
 
-  const tail = new THREE.Mesh(new THREE.TorusGeometry(0.09,0.03,8,16), pink2);
-  tail.position.set(-0.72,0.05,0);
-  tail.rotation.y = Math.PI/2;
+  const upperLegGeo = new THREE.CapsuleGeometry(0.1, 0.34, 6, 10);
+  const lowerLegGeo = new THREE.CapsuleGeometry(0.085, 0.28, 6, 10);
+
+  const leftLeg = new THREE.Group();
+  const rightLeg = new THREE.Group();
+
+  const leftThigh = new THREE.Mesh(upperLegGeo, outfit);
+  const rightThigh = new THREE.Mesh(upperLegGeo, outfit);
+  leftThigh.position.set(0, -0.18, 0);
+  rightThigh.position.set(0, -0.18, 0);
+  leftThigh.castShadow = true;
+  rightThigh.castShadow = true;
+  leftLeg.add(leftThigh);
+  rightLeg.add(rightThigh);
+
+  const leftShin = new THREE.Mesh(lowerLegGeo, skin);
+  const rightShin = new THREE.Mesh(lowerLegGeo, skin);
+  leftShin.position.set(0, -0.46, 0);
+  rightShin.position.set(0, -0.46, 0);
+  leftShin.castShadow = true;
+  rightShin.castShadow = true;
+  leftLeg.add(leftShin);
+  rightLeg.add(rightShin);
+
+  const leftShoe = new THREE.Group();
+  const rightShoe = new THREE.Group();
+
+  const shoeBodyL = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.1, 0.16), shoeMat);
+  const shoeBodyR = shoeBodyL.clone();
+  shoeBodyL.position.set(0.08, -0.15, 0);
+  shoeBodyR.position.set(0.08, -0.15, 0);
+  leftShoe.add(shoeBodyL);
+  rightShoe.add(shoeBodyR);
+
+  const shoeFrontL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 12), soleMat);
+  const shoeFrontR = shoeFrontL.clone();
+  shoeFrontL.scale.set(1.25, 0.65, 0.9);
+  shoeFrontR.scale.set(1.25, 0.65, 0.9);
+  shoeFrontL.position.set(0.17, -0.13, 0);
+  shoeFrontR.position.set(0.17, -0.13, 0);
+  leftShoe.add(shoeFrontL);
+  rightShoe.add(shoeFrontR);
+
+  leftShoe.position.set(0, -0.68, 0);
+  rightShoe.position.set(0, -0.68, 0);
+
+  leftLeg.add(leftShoe);
+  rightLeg.add(rightShoe);
+
+  legPivotL.add(leftLeg);
+  legPivotR.add(rightLeg);
+
+  const tail = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.025, 8, 18), skin2);
+  tail.position.set(-0.73, 0.1, 0);
+  tail.rotation.y = Math.PI / 2;
+  tail.castShadow = true;
   g.add(tail);
 
   const label = makeLabel(name);
-  label.position.set(0,1.9,0);
+  label.position.set(0, 1.9, 0);
   g.add(label);
 
   const myMarker = makeMyMarker();
   g.add(myMarker);
 
-  g.scale.setScalar(total > 120 ? 0.38 : total > 90 ? 0.45 : total > 60 ? 0.52 : 0.62);
-  g.position.set(startX,0,laneZ);
-  g.rotation.y = -Math.PI/2;
+  const pigScale = total > 120 ? 0.34 : total > 90 ? 0.4 : total > 60 ? 0.48 : 0.56;
+  const baseY = -1.32 + 1.32 * pigScale;
+  g.scale.setScalar(pigScale);
+  g.position.set(startX, baseY, laneZ);
+  g.rotation.y = 0;
   g.userData = {
-    name,index,startX,finishX,laneZ,
-    leftArm,rightArm,leftLeg,rightLeg,body,head,label,tail,myMarker,
+    name,index,startX,finishX,laneZ,baseY,
+    leftArm: armPivotL,
+    rightArm: armPivotR,
+    leftLeg: legPivotL,
+    rightLeg: legPivotR,
+    body,head,label,tail,myMarker,
+    chest,belly,
     seed:index*0.73+1.1
   };
   return g;
@@ -760,16 +859,22 @@ function animatePig(pig, elapsedSec){
     data.body.rotation.z = Math.sin(elapsedSec * 12) * 0.08;
     data.head.rotation.z = -Math.sin(elapsedSec * 12) * 0.07;
   }else{
+     }else{
     const moving = state.race ? 1 : 0.35;
-    pig.position.y = Math.abs(Math.sin(phase)) * 0.08 * moving;
-    pig.rotation.y = -Math.PI/2;
-    pig.rotation.z = -0.08;
-    data.leftLeg.rotation.z = Math.sin(phase) * 0.95 * moving;
-    data.rightLeg.rotation.z = -Math.sin(phase) * 0.95 * moving;
-    data.leftArm.rotation.z = -Math.sin(phase) * 0.65 * moving;
-    data.rightArm.rotation.z = Math.sin(phase) * 0.65 * moving;
-    data.body.rotation.z = -0.08 + Math.sin(phase*2) * 0.02 * moving;
-    data.head.rotation.z = Math.sin(phase*1.6) * 0.03 * moving;
+    pig.position.y = data.baseY + Math.abs(Math.sin(phase)) * 0.04 * moving;
+    pig.rotation.y = 0;
+    pig.rotation.z = -0.12;
+
+    data.leftLeg.rotation.z = Math.sin(phase) * 1.05 * moving;
+    data.rightLeg.rotation.z = -Math.sin(phase) * 1.05 * moving;
+
+    data.leftArm.rotation.z = -Math.sin(phase) * 0.95 * moving - 0.25;
+    data.rightArm.rotation.z = Math.sin(phase) * 0.95 * moving + 0.25;
+
+    data.body.rotation.z = -0.16 + Math.sin(phase * 2) * 0.03 * moving;
+    data.body.rotation.x = Math.cos(phase * 2) * 0.02 * moving;
+    data.head.rotation.z = 0.08 + Math.sin(phase * 1.6) * 0.04 * moving;
+    data.head.rotation.x = -0.08;
   }
 
   data.tail.rotation.x = elapsedSec * 8 + data.seed;
