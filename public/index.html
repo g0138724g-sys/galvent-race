@@ -280,6 +280,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 
 const $ = id => document.getElementById(id);
@@ -580,6 +581,13 @@ function createPig(name, index, total, laneZ, startX, finishX){
 
 async function loadPigModel(){
   const loader = new GLTFLoader();
+
+  // Blender에서 Draco Compression으로 내보낸 GLB를 읽기 위한 디코더
+  const dracoLoader = new DRACOLoader();
+  dracoLoader.setDecoderPath('https://unpkg.com/three@0.166.1/examples/jsm/libs/draco/gltf/');
+  dracoLoader.preload();
+  loader.setDRACOLoader(dracoLoader);
+
   let lastErr = null;
 
   for(const url of pigModelUrls){
@@ -599,8 +607,8 @@ async function loadPigModel(){
   }
 
   pigModelError = 'piggu.glb를 불러오지 못했습니다.';
-  console.error(lastErr);
-  setSub('3D 돼지 모델 파일 확인 필요: public/piggu.glb');
+  console.error('Piggu GLB load error:', lastErr);
+  setSub('3D 돼지 모델 로딩 실패 · public/piggu.glb 파일명/배포 상태 확인');
 }
 
 function clearNameLabels(){
