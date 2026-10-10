@@ -301,6 +301,9 @@ const pigModelUrls = ['/piggu.glb','/piggu_test.glb','/piggu_web.glb'];
 const _axisX = new THREE.Vector3(1,0,0);
 const _axisZ = new THREE.Vector3(0,0,1);
 const _tmpQ = new THREE.Quaternion();
+const _tmpQ2 = new THREE.Quaternion();
+const _tmpQ3 = new THREE.Quaternion();
+const _tmpQ4 = new THREE.Quaternion();
 const _tmpV = new THREE.Vector3();
 const durationMs = 30000;
 const bgm = new Audio('/race.mp3');
@@ -329,7 +332,7 @@ function initScene(){
     alpha:true,
     powerPreference:'high-performance'
   });
-  renderer.setPixelRatio(1);
+  renderer.setPixelRatio(0.85);
   renderer.setSize($('sceneWrap').clientWidth, $('sceneWrap').clientHeight, false);
   renderer.shadowMap.enabled = false;
 
@@ -337,7 +340,7 @@ function initScene(){
   scene.fog = new THREE.Fog(0xdff6ff, 40, 140);
 
   camera = new THREE.PerspectiveCamera(
-    42,
+    48,
     $('sceneWrap').clientWidth / $('sceneWrap').clientHeight,
     0.1,
     400
@@ -467,38 +470,64 @@ function captureRig(model){
     legR: findBone(model,['leg_ref.r']),
     footL: findBone(model,['foot_ref.l']),
     footR: findBone(model,['foot_ref.r']),
-    toesL: findBone(model,['toes_ref.l']),
-    toesR: findBone(model,['toes_ref.r']),
     spine1: findBone(model,['spine_01_ref.x']),
     spine2: findBone(model,['spine_02_ref.x']),
     spine3: findBone(model,['spine_03_ref.x']),
     neck: findBone(model,['neck_ref.x']),
     head: findBone(model,['head_ref.x'])
   };
-  const rest = {};
+
+  // 중요: 이 Piggu 리그의 bone local axis는 팔/다리마다 제각각임.
+  // 그래서 local Euler를 억지로 넣지 않고, "모델 좌표계" 기준 회전을
+  // 각 bone의 parent-local quaternion으로 변환해서 적용한다.
+  model.updateWorldMatrix(true,true);
+  const modelWorldQ = new THREE.Quaternion();
+  model.getWorldQuaternion(modelWorldQ);
+  const invModelWorldQ = modelWorldQ.clone().invert();
+
+  const restModel = {};
   for(const [k,b] of Object.entries(bones)){
-    if(b) rest[k] = b.quaternion.clone();
+    if(!b) continue;
+    const bw = new THREE.Quaternion();
+    b.getWorldQuaternion(bw);
+    restModel[k] = invModelWorldQ.clone().multiply(bw);
   }
-  return {bones,rest};
+
+  return {bones,restModel,modelRoot:model};
 }
 
-const _poseEuler = new THREE.Euler();
+function setBoneModelPose(rig,key,xAngle=0,zAngle=0){
+  const bone = rig.bones[key];
+  const rest = rig.restModel[key];
+  if(!bone || !rest || !bone.parent) return;
 
-function setBonePose(rig,key,rx=0,ry=0,rz=0){
-  const b = rig.bones[key];
-  const q0 = rig.rest[key];
-  if(!b || !q0) return;
-  _poseEuler.set(rx,ry,rz,'XYZ');
-  _tmpQ.setFromEuler(_poseEuler);
-  b.quaternion.copy(q0).multiply(_tmpQ);
-}
+  // 원하는 절대 자세를 Piggu 원본 모델 좌표계에서 만든다.
+  // 원본: +Z = 얼굴/진행방향, +Y = 위, +X = 좌우.
+  _tmpQ.copy(rest);
 
-function setBoneDelta(rig,key,axis,angle){
-  const b = rig.bones[key];
-  const q0 = rig.rest[key];
-  if(!b || !q0) return;
-  _tmpQ.setFromAxisAngle(axis,angle);
-  b.quaternion.copy(q0).multiply(_tmpQ);
+  if(Math.abs(zAngle) > 1e-6){
+    _tmpQ2.setFromAxisAngle(_axisZ,zAngle);
+    _tmpQ.premultiply(_tmpQ2);
+  }
+  if(Math.abs(xAngle) > 1e-6){
+    _tmpQ2.setFromAxisAngle(_axisX,xAngle);
+    _tmpQ.premultiply(_tmpQ2);
+  }
+
+  // model-space desired quaternion -> 현재 parent-local quaternion
+  rig.modelRoot.updateWorldMatrix(true,false);
+  bone.parent.updateWorldMatrix(true,false);
+
+  rig.modelRoot.getWorldQuaternion(_tmpQ2);
+  bone.parent.getWorldQuaternion(_tmpQ3);
+
+  // parent orientation relative to model
+  _tmpQ4.copy(_tmpQ2).invert().multiply(_tmpQ3);
+
+  // local = inverse(parentModel) * desiredModel
+  _tmpQ4.invert().multiply(_tmpQ);
+  bone.quaternion.copy(_tmpQ4);
+  bone.updateMatrixWorld(true);
 }
 
 function makeNameTag(name){
@@ -538,8 +567,94 @@ function characterBounds(model){
   return meshBox;
 }
 
+
+function optimizePigRig(root){
+  const skinned = [];
+  root.traverse(o=>{
+    if(o.isSkinnedMesh && o.skeleton && o.geometry?.getAttribute('skinIndex')){
+      skinned.push(o);
+    }
+  });
+  if(!skinned.length) return {before:0,after:0};
+
+  const referenceSkeleton = skinned[0].skeleton;
+  const before = referenceSkeleton.bones.length;
+  const used = new Set();
+
+  // Draco가 풀린 뒤 실제 vertex weight를 보고 "진짜로 쓰는 joint"만 찾는다.
+  for(const mesh of skinned){
+    const si = mesh.geometry.getAttribute('skinIndex');
+    const sw = mesh.geometry.getAttribute('skinWeight');
+    if(!si || !sw) continue;
+
+    const itemSize = Math.min(si.itemSize,sw.itemSize);
+    for(let i=0;i<si.count;i++){
+      const baseI = i*si.itemSize;
+      const baseW = i*sw.itemSize;
+      for(let c=0;c<itemSize;c++){
+        const w = sw.array[baseW+c];
+        if(w !== 0) used.add(Number(si.array[baseI+c]));
+      }
+    }
+  }
+
+  const usedOld = [...used].sort((a,b)=>a-b);
+  const remap = new Map(usedOld.map((oldIndex,newIndex)=>[oldIndex,newIndex]));
+
+  for(const mesh of skinned){
+    const oldSkeleton = mesh.skeleton;
+    const geo = mesh.geometry.clone();
+    const si = geo.getAttribute('skinIndex');
+    const sw = geo.getAttribute('skinWeight');
+
+    if(si && sw){
+      const itemSize = Math.min(si.itemSize,sw.itemSize);
+      for(let i=0;i<si.count;i++){
+        const baseI = i*si.itemSize;
+        const baseW = i*sw.itemSize;
+        for(let c=0;c<itemSize;c++){
+          const w = sw.array[baseW+c];
+          const oldIndex = Number(si.array[baseI+c]);
+          si.array[baseI+c] = w !== 0 ? (remap.get(oldIndex) ?? 0) : 0;
+        }
+      }
+      si.needsUpdate = true;
+    }
+
+    mesh.geometry = geo;
+
+    const bones = usedOld.map(i=>oldSkeleton.bones[i]).filter(Boolean);
+    const inverses = usedOld.map(i=>oldSkeleton.boneInverses[i]?.clone() ?? new THREE.Matrix4());
+    const reducedSkeleton = new THREE.Skeleton(bones,inverses);
+    mesh.bind(reducedSkeleton,mesh.bindMatrix.clone());
+  }
+
+  // skin에는 안 쓰면서 Rigify가 내보낸 수백 개 control branch도 제거.
+  const keep = new Set([root,...skinned]);
+  for(const oldIndex of usedOld){
+    let o = referenceSkeleton.bones[oldIndex];
+    while(o){
+      keep.add(o);
+      if(o === root) break;
+      o = o.parent;
+    }
+  }
+
+  const prune = [];
+  root.traverse(o=>{
+    if(o === root || o.isSkinnedMesh) return;
+    if(o.parent && keep.has(o.parent) && !keep.has(o)){
+      prune.push(o);
+    }
+  });
+  for(const o of prune) o.removeFromParent();
+
+  return {before,after:usedOld.length};
+}
+
 function createPig(name, index, total, laneZ, startX, finishX){
   const g = new THREE.Group();
+  const facing = new THREE.Group();
   const model = cloneSkeleton(pigTemplate);
 
   model.traverse(o=>{
@@ -547,45 +662,42 @@ function createPig(name, index, total, laneZ, startX, finishX){
       o.visible = true;
       o.castShadow = false;
       o.receiveShadow = false;
-      o.frustumCulled = true;
+      // 눈/코/몸이 별도 SkinnedMesh라 부분 소실 방지
+      o.frustumCulled = false;
+      if(o.material){
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        for(const m of mats){
+          m.side = THREE.DoubleSide;
+        }
+      }
     }
   });
 
-  // 실제 캐릭터 mesh만 기준으로 3D 크기를 자동 정규화.
-  let box = characterBounds(model);
-  const size = new THREE.Vector3();
-  box.getSize(size);
+  /*
+    업로드한 piggu.glb 실제 mesh bounds를 다시 확인함:
+    Y 약 0.01 ~ 13.48. 따라서 동적 Box3 재센터링을 하지 않고
+    원본 중심/발 위치를 그대로 쓰는 게 가장 안전함.
+  */
+  model.scale.setScalar(0.130);
+  model.position.set(0,0,0);
 
-  const targetHeight = 2.35;
-  const modelScale = targetHeight / Math.max(0.001,size.y);
-  model.scale.setScalar(modelScale);
-  model.updateMatrixWorld(true);
-
-  box = characterBounds(model);
-  const center = new THREE.Vector3();
-  box.getCenter(center);
-  model.position.x -= center.x;
-  model.position.z -= center.z;
-  model.position.y -= box.min.y;
-
-  // 업로드한 Piggu의 얼굴/코는 원본 +Z 방향.
-  // 레이스는 +X 방향이므로 정확히 +90도 회전 = 항상 결승선을 바라봄.
-  model.rotation.set(0,Math.PI/2,0);
-
-  g.add(model);
+  // 원본 Piggu는 +Z를 바라봄. 레이스 결승선은 +X.
+  facing.rotation.set(0,Math.PI/2,0);
+  facing.add(model);
+  g.add(facing);
 
   const labelEl = makeNameTag(name);
-  const baseY = -1.29;
+  const baseY = -1.33;
   g.position.set(startX,baseY,laneZ);
-  g.rotation.set(0,0,0);
 
+  g.updateWorldMatrix(true,true);
   const rig = captureRig(model);
 
   g.userData = {
     name,index,startX,finishX,laneZ,baseY,
-    model,rig,labelEl,
+    model,facing,rig,labelEl,
     seed:index*0.73+1.1,
-    displayHeight:targetHeight
+    displayHeight:1.76
   };
   return g;
 }
@@ -626,11 +738,17 @@ async function loadPigModel(){
       // 화면에는 첫 번째 실제 캐릭터 rig만 사용해서 렉/검은 보조도형을 제거.
       const sourceRig = gltf.scene.getObjectByName('rig');
       if(!sourceRig) throw new Error('Piggu rig node not found');
+
+      // 파일 안에 char_grp / char_grp.001 두 캐릭터가 중복으로 들어있음.
+      // 첫 번째 실제 rig만 떼어내고, 실제 vertex가 쓰는 joint만 남긴다.
       sourceRig.removeFromParent();
+      const rigStats = optimizePigRig(sourceRig);
+
       pigTemplate = sourceRig;
       pigTemplate.updateMatrixWorld(true);
       pigModelReady = true;
       pigModelError = '';
+      console.log(`Piggu rig optimized: ${rigStats.before} -> ${rigStats.after} joints`);
       setSub('3D 돼지 모델 준비 완료');
       lastSignature = '';
       maybeRebuildWorld();
@@ -671,7 +789,7 @@ function buildWorld(){
   const totalParticipants = state.racers.length;
 
   // 고퀄 리깅 캐릭터는 TOP10(+내 돼지)만 렌더해서 렉을 크게 줄임.
-  const laneGap = 2.15;
+  const laneGap = 2.45;
   const startX = -22;
   const finishX = 22;
   const totalDepth = Math.max(22,count*laneGap+5);
@@ -839,10 +957,10 @@ function updateCamera(){
   const pos = new THREE.Vector3();
   pig.getWorldPosition(pos);
 
-  const desired = new THREE.Vector3(pos.x - 4.8,pos.y + 2.5,pos.z + 5.6);
-  camera.position.lerp(desired,0.08);
+  const desired = new THREE.Vector3(pos.x - 6.8,pos.y + 3.2,pos.z + 6.8);
+  camera.position.lerp(desired,0.075);
 
-  const look = new THREE.Vector3(pos.x + 2.2,pos.y + 0.85,pos.z);
+  const look = new THREE.Vector3(pos.x + 2.2,pos.y + 0.35,pos.z);
   camera.lookAt(look);
 }
 
@@ -886,11 +1004,10 @@ function updateOverlay(){
   }
 }
 
-function animatePig(pig, elapsedSec){
+function animatePig(pig, elapsedSec, rankMap){
   const data = pig.userData;
   const rig = data.rig;
   const total = Math.max(1,state.racers.length);
-  const rankMap = new Map((state.race?.order || []).map(x=>[x.nickname,x.place]));
   const place = rankMap.get(data.name) || (data.index+1);
 
   let progress = 0;
@@ -898,9 +1015,8 @@ function animatePig(pig, elapsedSec){
     progress = Math.min(1,Math.max(0,(Date.now()-state.race.startedAt)/durationMs));
   }
 
-  const phase = elapsedSec*10.5 + data.seed*2.1;
+  const phase = elapsedSec*9.4 + data.seed*1.45;
   const stride = Math.sin(phase);
-  const stride2 = Math.sin(phase+Math.PI);
   let x = data.startX;
   let winnerDance = false;
 
@@ -909,9 +1025,9 @@ function animatePig(pig, elapsedSec){
       ? 1.018
       : 0.91-((place-2)/Math.max(1,total-1))*0.25;
 
-    const wobble = Math.sin(elapsedSec*3.1+data.seed*5)*(1-progress)*0.45;
+    const wobble = Math.sin(elapsedSec*3.0+data.seed*4.3)*(1-progress)*0.30;
     const pct = progress<1
-      ? Math.max(0,Math.min(1,progress*finishBias+wobble*0.018))
+      ? Math.max(0,Math.min(1,progress*finishBias+wobble*0.014))
       : (place===1 ? 1.025 : Math.max(0.80,0.985-place*0.0024));
 
     x = THREE.MathUtils.lerp(data.startX,data.finishX,pct);
@@ -925,60 +1041,67 @@ function animatePig(pig, elapsedSec){
   pig.position.x = x;
   pig.position.z = data.laneZ;
 
-  // 평상시에도 시선/몸 방향은 결승선(+X)으로 고정.
-  pig.rotation.y = 0;
+  // 모든 돼지는 항상 +X 결승선을 바라본다.
+  data.facing.rotation.y = Math.PI/2;
 
   if(winnerDance){
-    pig.position.y = data.baseY + Math.abs(Math.sin(elapsedSec*6))*0.16;
-    pig.rotation.y = Math.sin(elapsedSec*5.5)*0.28;
+    pig.position.y = data.baseY + Math.abs(Math.sin(elapsedSec*6.0))*0.10;
+    pig.rotation.z = Math.sin(elapsedSec*6.5)*0.05;
 
-    setBonePose(rig,'armL',-1.20,0, Math.sin(elapsedSec*7)*0.75);
-    setBonePose(rig,'armR',-1.20,0,-Math.sin(elapsedSec*7)*0.75);
-    setBonePose(rig,'forearmL',-0.65,0,0);
-    setBonePose(rig,'forearmR',-0.65,0,0);
-    setBonePose(rig,'thighL',0,0, Math.sin(elapsedSec*6)*0.35);
-    setBonePose(rig,'thighR',0,0, Math.sin(elapsedSec*6)*0.35);
-    setBonePose(rig,'spine1',0.08,0,Math.sin(elapsedSec*5)*0.10);
-    setBonePose(rig,'head',0,0,-Math.sin(elapsedSec*5)*0.08);
+    // 골인 후 팔을 들고 춤. rest/model-space 기준이라 몸이 찢어지지 않음.
+    setBoneModelPose(rig,'armL',-0.25,-0.55);
+    setBoneModelPose(rig,'armR', 0.25, 0.55);
+    setBoneModelPose(rig,'forearmL',-0.55,-0.55);
+    setBoneModelPose(rig,'forearmR',-0.55, 0.55);
+    setBoneModelPose(rig,'thighL', Math.sin(elapsedSec*6)*0.20,0);
+    setBoneModelPose(rig,'thighR',-Math.sin(elapsedSec*6)*0.20,0);
     return;
   }
 
-  const moving = state.race ? 1 : 0.12;
+  const moving = state.race ? 1 : 0.06;
 
-  // 발은 땅에 붙이고 몸 전체는 사람 달리기처럼 아주 작게 상하 이동.
-  pig.position.y = data.baseY + Math.max(0,Math.sin(phase*2))*0.055*moving;
-  pig.rotation.z = 0;
+  // 몸 전체는 발이 땅에서 뜬 것처럼 보이지 않을 정도로만 위아래 움직임
+  pig.position.y = data.baseY + Math.max(0,Math.sin(phase*2))*0.035*moving;
+  pig.rotation.z = -0.035*moving;
 
   /*
-    Piggu 실제 rig 구조 기준:
-    - arm_ref.l/r: T-pose 팔을 먼저 아래로 내린 뒤 앞/뒤로 교차 스윙
-    - thigh_ref.l/r: 양 허벅지가 번갈아 전/후 스윙
-    - leg_ref.l/r: 뒤로 가는 다리는 무릎을 굽혀 발이 들리게 함
-    - spine refs: 상체를 결승선 쪽으로 살짝 숙임
+    실제 Piggu rest pose는 팔이 좌우로 펼쳐져 있음.
+    모델 좌표:
+      +Z = 얼굴/진행방향
+      +Y = 위
+      +X = 좌우
+
+    1) Z축 ±90°로 양팔을 자연스럽게 아래로 내림
+    2) X축으로 앞/뒤 교차 스윙
+    3) 다리도 X축으로 반대 위상 스윙
   */
-  const armSwing = stride*0.48*moving;
-  setBonePose(rig,'armL',-1.18,0, armSwing);
-  setBonePose(rig,'armR',-1.18,0, armSwing);
-  setBonePose(rig,'forearmL',-0.72-0.12*Math.max(0,-stride)*moving,0,0);
-  setBonePose(rig,'forearmR',-0.72-0.12*Math.max(0, stride)*moving,0,0);
+  const leftArmSwing  =  stride*0.48*moving;   // 왼팔 뒤/앞
+  const rightArmSwing = -stride*0.48*moving;   // 오른팔 반대
+  const leftLegSwing  = -stride*0.56*moving;   // 왼다리 앞/뒤
+  const rightLegSwing =  stride*0.56*moving;   // 오른다리 반대
 
-  // 좌우 뼈의 로컬 Z축이 거울 대칭이라 같은 값으로 주면 실제로 서로 반대로 움직임.
-  const legSwing = stride*0.62*moving;
-  setBonePose(rig,'thighL',0,0, legSwing);
-  setBonePose(rig,'thighR',0,0, legSwing);
+  // 팔: rest T-pose -> 아래로 -> 사람 달리기처럼 교차
+  setBoneModelPose(rig,'armL',leftArmSwing,-Math.PI/2);
+  setBoneModelPose(rig,'armR',rightArmSwing, Math.PI/2);
 
-  // 무릎은 뒤로 빠지는 쪽에서 더 굽힘.
-  setBonePose(rig,'legL',0,0,-Math.max(0,-stride)*0.72*moving);
-  setBonePose(rig,'legR',0,0, Math.max(0, stride)*0.72*moving);
-  setBonePose(rig,'footL',0,0, Math.max(0,-stride)*0.22*moving);
-  setBonePose(rig,'footR',0,0,-Math.max(0, stride)*0.22*moving);
+  // 팔꿈치는 기본적으로 약 55~65도 굽힌 자세
+  setBoneModelPose(rig,'forearmL',leftArmSwing-0.72,-Math.PI/2);
+  setBoneModelPose(rig,'forearmR',rightArmSwing-0.72, Math.PI/2);
 
-  // 사람 달리기처럼 상체를 진행 방향으로 약간 숙이고 고개는 정면 유지.
-  setBonePose(rig,'spine1',0.12*moving,0,0);
-  setBonePose(rig,'spine2',0.04*moving,0,0);
-  setBonePose(rig,'spine3',0.02*moving,0,0);
-  setBonePose(rig,'neck',-0.05*moving,0,0);
-  setBonePose(rig,'head',-0.03*moving,0,0);
+  // 허벅지
+  setBoneModelPose(rig,'thighL',leftLegSwing,0);
+  setBoneModelPose(rig,'thighR',rightLegSwing,0);
+
+  // 뒤로 빠지는 다리는 무릎을 크게 굽힘
+  const kneeL = (0.10 + Math.max(0,-stride)*0.72)*moving;
+  const kneeR = (0.10 + Math.max(0, stride)*0.72)*moving;
+
+  setBoneModelPose(rig,'legL',leftLegSwing+kneeL,0);
+  setBoneModelPose(rig,'legR',rightLegSwing+kneeR,0);
+
+  // 발은 무릎에 그대로 끌려가지 않도록 살짝 보정
+  setBoneModelPose(rig,'footL',leftLegSwing+kneeL*0.18,0);
+  setBoneModelPose(rig,'footR',rightLegSwing+kneeR*0.18,0);
 }
 
 function updateNameLabels(){
@@ -1032,16 +1155,18 @@ function updateAllCamera(){
   if(cameraMode !== 'all' || !pigs.length) return;
 
   const focusX = pigs.reduce((a,p)=>a+p.position.x,0)/pigs.length;
-  const visualDepth = Math.max(20,pigs.length*2.15+5);
+  const visualDepth = Math.max(26,pigs.length*2.45+7);
 
-  // 돼지 진행 방향(+X)의 앞쪽/측면에서 보는 TV 중계 느낌.
+  // 결승선 앞쪽의 3/4 TV 카메라:
+  // 얼굴/눈 + 발끝까지 전신 + TOP10 라인이 같이 들어오게 여유 있게 잡음.
   const desired = new THREE.Vector3(
-    focusX+9.5,
-    6.4,
-    Math.max(15,visualDepth*0.68)
+    focusX+24,
+    8.3,
+    Math.max(22,visualDepth*0.80)
   );
-  camera.position.lerp(desired,0.055);
-  camera.lookAt(focusX+0.7,0.45,0);
+
+  camera.position.lerp(desired,0.045);
+  camera.lookAt(focusX+1.5,-0.10,0);
 }
 
 let lastPerfFrame = 0;
@@ -1057,7 +1182,8 @@ function animate(now=0){
 
   const t = clock.getElapsedTime();
   updateOverlay();
-  pigs.forEach(p => animatePig(p, t));
+  const rankMap = new Map((state.race?.order || []).map(x=>[x.nickname,x.place]));
+  pigs.forEach(p => animatePig(p,t,rankMap));
   updateCamera();
   updateAllCamera();
 
