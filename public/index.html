@@ -128,6 +128,59 @@
       font-size:13px;font-weight:800;
     }
     .rankRow.top1{background:#fff0a8}
+
+    .myPigControls{
+      display:flex;
+      gap:8px;
+      margin-top:10px;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+    .myPigControls input{
+      width:min(360px,100%);
+    }
+    .btn-my{background:#ffc7df}
+    .btn-all{background:#cfe8ff}
+    .myPigBadge{
+      position:absolute;
+      left:50%;
+      top:14px;
+      transform:translateX(-50%);
+      background:#ffedf5ee;
+      border:2px solid #ff9fc6;
+      border-radius:15px;
+      padding:9px 14px;
+      font-weight:900;
+      font-size:15px;
+      box-shadow:0 4px 14px #0002;
+      display:none;
+    }
+    .top10Box{
+      position:absolute;
+      right:14px;
+      top:88px;
+      width:190px;
+      max-height:300px;
+      overflow:hidden;
+      background:#ffffffde;
+      border-radius:14px;
+      padding:9px;
+      box-shadow:0 4px 14px #0002;
+      font-size:12px;
+      font-weight:800;
+      pointer-events:none;
+    }
+    .top10Title{font-size:13px;font-weight:900;margin-bottom:5px;text-align:center}
+    .top10Row{
+      display:flex;
+      justify-content:space-between;
+      gap:6px;
+      padding:3px 5px;
+      border-radius:7px;
+      background:#f7f8fa;
+      margin-bottom:3px;
+    }
+    .top10Row.me{background:#ffd7e8}
     @media (max-width:1100px){
       .controls{grid-template-columns:1fr 1fr;gap:8px}
       #sceneWrap{height:64vh;min-height:480px}
@@ -157,6 +210,11 @@
     </div>
     <div class="status" id="status">참가자 0 / 200명</div>
     <div class="substatus" id="substatus">댓글을 불러오면 참가자가 자동 등록됩니다.</div>
+    <div class="myPigControls">
+      <input id="myPigName" placeholder="내 닉네임 입력">
+      <button class="btn-my" onclick="findMyPig()">🐷 내 돼지 보기</button>
+      <button class="btn-all" onclick="showAllPigs()">🏁 전체보기</button>
+    </div>
   </div>
 
   <div class="panel scenePanel">
@@ -164,7 +222,9 @@
       <canvas id="scene"></canvas>
       <div class="overlay">
         <div class="timerBadge" id="timer">대기 중</div>
+        <div class="myPigBadge" id="myPigBadge"></div>
         <div class="infoBadge" id="sceneInfo">참가자 0명<br>30초 레이스</div>
+        <div class="top10Box" id="top10Box"><div class="top10Title">TOP 10</div><div id="top10List">레이스 대기중</div></div>
         <div class="winnerBanner" id="winnerBanner"></div>
       </div>
     </div>
@@ -201,6 +261,8 @@ let worldGroup = null;
 let lastSignature = '';
 let musicEnabled = true;
 let finishShown = false;
+let selectedPigName = localStorage.getItem('galvent_my_pig') || '';
+let cameraMode = selectedPigName ? 'mine' : 'all';
 const durationMs = 30000;
 const bgm = new Audio('/race.mp3');
 bgm.loop = true;
@@ -307,6 +369,32 @@ function roundRect(ctx, x, y, w, h, r){
   ctx.closePath();
 }
 
+
+function makeMyMarker(){
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 160;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = 'rgba(255,236,246,0.98)';
+  roundRect(ctx, 12, 22, 488, 110, 34);
+  ctx.fill();
+  ctx.strokeStyle = '#ff5fa3';
+  ctx.lineWidth = 8;
+  roundRect(ctx, 12, 22, 488, 110, 34);
+  ctx.stroke();
+  ctx.fillStyle = '#ff297f';
+  ctx.font = '900 45px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('⭐ 내 돼지', 256, 77);
+  const tex = new THREE.CanvasTexture(c);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));
+  sprite.scale.set(4.8,1.5,1);
+  sprite.position.set(0,3.2,0);
+  sprite.visible = false;
+  return sprite;
+}
+
 function createPig(name, index, total, laneZ, startX, finishX){
   const g = new THREE.Group();
   const pink = new THREE.MeshStandardMaterial({color:0xffa4bf, roughness:0.8, metalness:0.05});
@@ -388,12 +476,15 @@ function createPig(name, index, total, laneZ, startX, finishX){
   label.position.set(0,1.9,0);
   g.add(label);
 
-  g.scale.setScalar(total > 150 ? 0.24 : total > 100 ? 0.28 : total > 70 ? 0.32 : total > 40 ? 0.4 : 0.52);
+  const myMarker = makeMyMarker();
+  g.add(myMarker);
+
+  g.scale.setScalar(total > 120 ? 0.38 : total > 90 ? 0.45 : total > 60 ? 0.52 : 0.62);
   g.position.set(startX,0,laneZ);
   g.rotation.y = -Math.PI/2;
   g.userData = {
     name,index,startX,finishX,laneZ,
-    leftArm,rightArm,leftLeg,rightLeg,body,head,label,tail,
+    leftArm,rightArm,leftLeg,rightLeg,body,head,label,tail,myMarker,
     seed:index*0.73+1.1
   };
   return g;
@@ -408,7 +499,7 @@ function buildWorld(){
   $('winnerBanner').textContent = '';
 
   const count = state.racers.length;
-  const laneGap = count > 150 ? 0.42 : count > 100 ? 0.46 : count > 70 ? 0.52 : count > 40 ? 0.62 : 0.82;
+  const laneGap = count > 150 ? 0.72 : count > 100 ? 0.82 : count > 70 ? 0.95 : count > 40 ? 1.12 : 1.35;
   const startX = -22;
   const finishX = 22;
   const totalDepth = Math.max(22, count * laneGap + 6);
@@ -472,14 +563,16 @@ function buildWorld(){
     worldGroup.add(pig);
   }
 
-  const camHeight = Math.max(24, 19 + count * 0.24);
-  const camZ = Math.max(20, totalDepth * 0.7);
-  camera.position.set(8, camHeight, camZ);
-  camera.lookAt(5,-1,0);
+  const camHeight = Math.max(18, 13 + count * 0.13);
+  const camZ = Math.max(18, totalDepth * 0.42);
+  camera.position.set(12, camHeight, camZ);
+  camera.lookAt(6,0,0);
 
   scene.add(worldGroup);
   $('sceneInfo').innerHTML = `참가자 ${count}명<br>30초 레이스`;
   renderParticipants();
+  refreshMyPigSelection();
+  renderTop10();
   renderRanking();
 }
 
@@ -487,6 +580,100 @@ function renderParticipants(){
   $('list').innerHTML = state.racers.length
     ? state.racers.map((r,i)=>`<div class="person">${i+1}. ${esc(r.nickname)}</div>`).join('')
     : `<div class="person">아직 참가자가 없습니다.</div>`;
+}
+
+
+function refreshMyPigSelection(){
+  let found = false;
+  for(const pig of pigs){
+    const isMine = !!selectedPigName && pig.userData.name === selectedPigName;
+    if(pig.userData.myMarker) pig.userData.myMarker.visible = isMine;
+    if(pig.userData.label){
+      pig.userData.label.material.opacity = isMine ? 1 : (cameraMode === 'mine' ? 0.45 : 0.9);
+    }
+    if(isMine) found = true;
+  }
+  const badge = $('myPigBadge');
+  if(cameraMode === 'mine' && selectedPigName && found){
+    badge.style.display = 'block';
+  }else{
+    badge.style.display = 'none';
+  }
+}
+
+function currentPlaceOf(name){
+  const item = state.race?.order?.find(x=>x.nickname===name);
+  return item?.place || null;
+}
+
+function updateMyPigBadge(){
+  const badge = $('myPigBadge');
+  if(cameraMode !== 'mine' || !selectedPigName){
+    badge.style.display = 'none';
+    return;
+  }
+  const pig = pigs.find(p=>p.userData.name===selectedPigName);
+  if(!pig){
+    badge.style.display = 'none';
+    return;
+  }
+  const place = currentPlaceOf(selectedPigName);
+  badge.style.display = 'block';
+  badge.textContent = place ? `⭐ ${selectedPigName} · 현재 ${place}등` : `⭐ ${selectedPigName} · 내 돼지`;
+}
+
+function renderTop10(){
+  const box = $('top10List');
+  if(!state.race?.order?.length){
+    box.textContent = '레이스 대기중';
+    return;
+  }
+  box.innerHTML = state.race.order.slice(0,10).map((r,i)=>`
+    <div class="top10Row ${r.nickname===selectedPigName?'me':''}">
+      <span>${i+1}등</span><span>${esc(r.nickname)}</span>
+    </div>
+  `).join('');
+}
+
+function findMyPig(){
+  const q = $('myPigName').value.trim();
+  if(!q) return alert('내 닉네임을 입력하세요.');
+  const exact = state.racers.find(r=>r.nickname===q);
+  const partials = state.racers.filter(r=>r.nickname.toLowerCase().includes(q.toLowerCase()));
+  let target = exact;
+  if(!target && partials.length===1) target = partials[0];
+  if(!target){
+    if(partials.length>1) return alert('비슷한 닉네임이 여러 개 있습니다. 정확한 닉네임을 입력하세요.');
+    return alert('참가자 명단에서 해당 닉네임을 찾지 못했습니다.');
+  }
+  selectedPigName = target.nickname;
+  cameraMode = 'mine';
+  localStorage.setItem('galvent_my_pig', selectedPigName);
+  $('myPigName').value = selectedPigName;
+  refreshMyPigSelection();
+  updateMyPigBadge();
+  renderTop10();
+}
+
+function showAllPigs(){
+  cameraMode = 'all';
+  $('myPigBadge').style.display = 'none';
+  refreshMyPigSelection();
+}
+
+function updateCamera(){
+  if(cameraMode !== 'mine' || !selectedPigName) return;
+  const pig = pigs.find(p=>p.userData.name===selectedPigName);
+  if(!pig) return;
+
+  const pos = new THREE.Vector3();
+  pig.getWorldPosition(pos);
+
+  const desired = new THREE.Vector3(pos.x - 7.5, 4.8, pos.z + 7.5);
+  camera.position.lerp(desired, 0.08);
+
+  const look = new THREE.Vector3(pos.x + 2.8, 0.15, pos.z);
+  camera.lookAt(look);
 }
 
 function renderRanking(){
@@ -590,11 +777,28 @@ function animatePig(pig, elapsedSec){
   data.label.position.y = 1.85;
 }
 
+
+function updateAllCamera(){
+  if(cameraMode !== 'all') return;
+  const count = state.racers.length;
+  const laneGap = count > 150 ? 0.72 : count > 100 ? 0.82 : count > 70 ? 0.95 : count > 40 ? 1.12 : 1.35;
+  const totalDepth = Math.max(22, count * laneGap + 6);
+  const camHeight = Math.max(18, 13 + count * 0.13);
+  const camZ = Math.max(18, totalDepth * 0.42);
+  const desired = new THREE.Vector3(12,camHeight,camZ);
+  camera.position.lerp(desired,0.06);
+  camera.lookAt(6,0,0);
+}
+
 function animate(){
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
   updateOverlay();
   pigs.forEach(p => animatePig(p, t));
+  updateCamera();
+  updateAllCamera();
+  updateMyPigBadge();
+  renderTop10();
   renderer.render(scene, camera);
 }
 
@@ -701,8 +905,11 @@ window.loadComments = loadComments;
 window.startRace = startRace;
 window.resetRace = resetRace;
 window.toggleMusic = toggleMusic;
+window.findMyPig = findMyPig;
+window.showAllPigs = showAllPigs;
 
 initScene();
+if(selectedPigName) $('myPigName').value = selectedPigName;
 poll();
 setInterval(poll, 1500);
 </script>
