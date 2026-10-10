@@ -487,41 +487,84 @@ function makeNameTag(name){
   return el;
 }
 
+
+function isRigHelper(o){
+  const n = String(o.name || '').toLowerCase();
+  return n.startsWith('wgt-') || n.startsWith('wgt_') ||
+         n.includes('custom_shape') || n.includes('widget') ||
+         n.includes('rig_ui') || n.includes('metarig');
+}
+
+function characterBounds(model){
+  const skinnedBox = new THREE.Box3();
+  let skinnedCount = 0;
+  model.updateMatrixWorld(true);
+  model.traverse(o=>{
+    if(o.isSkinnedMesh && !isRigHelper(o)){
+      skinnedBox.expandByObject(o, true);
+      skinnedCount++;
+    }
+  });
+  if(skinnedCount && !skinnedBox.isEmpty()) return skinnedBox;
+
+  const meshBox = new THREE.Box3();
+  model.traverse(o=>{
+    if(o.isMesh && !isRigHelper(o) && o.visible !== false){
+      meshBox.expandByObject(o, true);
+    }
+  });
+  return meshBox;
+}
+
 function createPig(name, index, total, laneZ, startX, finishX){
   const g = new THREE.Group();
   const model = cloneSkeleton(pigTemplate);
 
   model.traverse(o=>{
+    // Rigify/Blender 보조 도형은 캐릭터 크기 계산과 화면 표시에서 제외
+    if(isRigHelper(o)){
+      o.visible = false;
+      return;
+    }
     if(o.isMesh){
+      o.visible = true;
       o.castShadow = true;
       o.receiveShadow = true;
-      o.frustumCulled = true;
+      o.frustumCulled = false;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.filter(Boolean).forEach(m=>{
+        m.visible = true;
+        m.side = THREE.DoubleSide;
+        if('opacity' in m && m.opacity <= 0.02) m.opacity = 1;
+      });
     }
   });
 
-  let box = new THREE.Box3().setFromObject(model);
+  // 전체 rig가 아니라 실제 캐릭터 mesh만 기준으로 크기를 잡는다.
+  let box = characterBounds(model);
   const size = new THREE.Vector3();
   box.getSize(size);
-  const targetHeight = 2.35;
+  const targetHeight = 3.6;
   const modelScale = targetHeight / Math.max(0.001,size.y);
   model.scale.setScalar(modelScale);
+  model.updateMatrixWorld(true);
 
-  box = new THREE.Box3().setFromObject(model);
+  box = characterBounds(model);
   const center = new THREE.Vector3();
   box.getCenter(center);
   model.position.x -= center.x;
   model.position.z -= center.z;
   model.position.y -= box.min.y;
 
-  // Blender 캐릭터를 레이스 진행방향(+X)으로 회전
+  // Blender glTF의 Y-up 기준. +X 방향으로 달리도록 회전.
   model.rotation.y = Math.PI / 2;
 
-  const crowdScale = total > 150 ? 0.52 : total > 100 ? 0.60 : total > 70 ? 0.68 : total > 40 ? 0.78 : 0.88;
+  const crowdScale = total > 150 ? 0.58 : total > 100 ? 0.68 : total > 70 ? 0.78 : total > 40 ? 0.86 : 0.94;
   g.scale.setScalar(crowdScale);
   g.add(model);
 
   const labelEl = makeNameTag(name);
-  const baseY = -1.30;
+  const baseY = -1.27;
   g.position.set(startX,baseY,laneZ);
 
   const rig = captureRig(model);
@@ -924,11 +967,18 @@ function updateAllCamera(){
   const count = state.racers.length;
   const laneGap = count > 150 ? 0.72 : count > 100 ? 0.82 : count > 70 ? 0.95 : count > 40 ? 1.12 : 1.35;
   const totalDepth = Math.max(22, count * laneGap + 6);
-  const camHeight = Math.max(18, 13 + count * 0.13);
-  const camZ = Math.max(18, totalDepth * 0.42);
-  const desired = new THREE.Vector3(12,camHeight,camZ);
-  camera.position.lerp(desired,0.06);
-  camera.lookAt(6,0,0);
+
+  let focusX = -18;
+  if(pigs.length){
+    focusX = pigs.reduce((a,p)=>a+p.position.x,0) / pigs.length;
+  }
+
+  // 참가자가 많아도 시작선/달리는 무리가 화면 한가운데 오게 따라간다.
+  const camHeight = Math.max(17, 11 + count * 0.105);
+  const camZ = Math.max(18, totalDepth * 0.38);
+  const desired = new THREE.Vector3(focusX + 8, camHeight, camZ);
+  camera.position.lerp(desired,0.07);
+  camera.lookAt(focusX + 1.5,0.25,0);
 }
 
 function animate(){
