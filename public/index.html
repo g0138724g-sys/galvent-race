@@ -71,7 +71,7 @@
     }
     .pigNameTag.top10{
       padding:4px 8px;background:rgba(255,245,180,.97);
-      border:2px solid #f4bd35;font-size:14px;z-index:7;
+      border:2px solid #f4bd35;font-size:13px;z-index:7;
     }
     .pigNameTag.mine{
       padding:5px 10px;background:rgba(255,220,239,.98);
@@ -455,25 +455,42 @@ function findBone(root, candidates){
 
 function captureRig(model){
   const bones = {
-    armL: findBone(model,['arm.l','c_arm_fk.l']),
-    armR: findBone(model,['arm.r','c_arm_fk.r']),
-    forearmL: findBone(model,['forearm.l','c_forearm_fk.l']),
-    forearmR: findBone(model,['forearm.r','c_forearm_fk.r']),
-    thighL: findBone(model,['thigh.l','c_thigh_fk.l']),
-    thighR: findBone(model,['thigh.r','c_thigh_fk.r']),
-    legL: findBone(model,['leg.l','c_leg_fk.l']),
-    legR: findBone(model,['leg.r','c_leg_fk.r']),
-    footL: findBone(model,['foot.l','c_foot_fk.l']),
-    footR: findBone(model,['foot.r','c_foot_fk.r']),
-    spine: findBone(model,['_spine_01.x','spine_01.x','spine.x','c_spine_01.x']),
-    neck: findBone(model,['neck.x','c_neck.x']),
-    head: findBone(model,['head.x','c_head.x'])
+    armL: findBone(model,['arm_ref.l']),
+    armR: findBone(model,['arm_ref.r']),
+    forearmL: findBone(model,['forearm_ref.l']),
+    forearmR: findBone(model,['forearm_ref.r']),
+    handL: findBone(model,['hand_ref.l']),
+    handR: findBone(model,['hand_ref.r']),
+    thighL: findBone(model,['thigh_ref.l']),
+    thighR: findBone(model,['thigh_ref.r']),
+    legL: findBone(model,['leg_ref.l']),
+    legR: findBone(model,['leg_ref.r']),
+    footL: findBone(model,['foot_ref.l']),
+    footR: findBone(model,['foot_ref.r']),
+    toesL: findBone(model,['toes_ref.l']),
+    toesR: findBone(model,['toes_ref.r']),
+    spine1: findBone(model,['spine_01_ref.x']),
+    spine2: findBone(model,['spine_02_ref.x']),
+    spine3: findBone(model,['spine_03_ref.x']),
+    neck: findBone(model,['neck_ref.x']),
+    head: findBone(model,['head_ref.x'])
   };
   const rest = {};
   for(const [k,b] of Object.entries(bones)){
     if(b) rest[k] = b.quaternion.clone();
   }
   return {bones,rest};
+}
+
+const _poseEuler = new THREE.Euler();
+
+function setBonePose(rig,key,rx=0,ry=0,rz=0){
+  const b = rig.bones[key];
+  const q0 = rig.rest[key];
+  if(!b || !q0) return;
+  _poseEuler.set(rx,ry,rz,'XYZ');
+  _tmpQ.setFromEuler(_poseEuler);
+  b.quaternion.copy(q0).multiply(_tmpQ);
 }
 
 function setBoneDelta(rig,key,axis,angle){
@@ -526,30 +543,20 @@ function createPig(name, index, total, laneZ, startX, finishX){
   const model = cloneSkeleton(pigTemplate);
 
   model.traverse(o=>{
-    // Rigify/Blender 보조 도형은 캐릭터 크기 계산과 화면 표시에서 제외
-    if(isRigHelper(o)){
-      o.visible = false;
-      return;
-    }
     if(o.isMesh){
       o.visible = true;
       o.castShadow = false;
       o.receiveShadow = false;
       o.frustumCulled = true;
-      const mats = Array.isArray(o.material) ? o.material : [o.material];
-      mats.filter(Boolean).forEach(m=>{
-        m.visible = true;
-        m.side = THREE.DoubleSide;
-        if('opacity' in m && m.opacity <= 0.02) m.opacity = 1;
-      });
     }
   });
 
-  // 전체 rig가 아니라 실제 캐릭터 mesh만 기준으로 크기를 잡는다.
+  // 실제 캐릭터 mesh만 기준으로 3D 크기를 자동 정규화.
   let box = characterBounds(model);
   const size = new THREE.Vector3();
   box.getSize(size);
-  const targetHeight = 3.6;
+
+  const targetHeight = 2.35;
   const modelScale = targetHeight / Math.max(0.001,size.y);
   model.scale.setScalar(modelScale);
   model.updateMatrixWorld(true);
@@ -561,16 +568,16 @@ function createPig(name, index, total, laneZ, startX, finishX){
   model.position.z -= center.z;
   model.position.y -= box.min.y;
 
-  // Blender glTF의 Y-up 기준. +X 방향으로 달리도록 회전.
-  model.rotation.y = Math.PI / 2;
+  // 업로드한 Piggu의 얼굴/코는 원본 +Z 방향.
+  // 레이스는 +X 방향이므로 정확히 +90도 회전 = 항상 결승선을 바라봄.
+  model.rotation.set(0,Math.PI/2,0);
 
-  const crowdScale = total > 150 ? 0.58 : total > 100 ? 0.68 : total > 70 ? 0.78 : total > 40 ? 0.86 : 0.94;
-  g.scale.setScalar(crowdScale);
   g.add(model);
 
   const labelEl = makeNameTag(name);
-  const baseY = -1.27;
+  const baseY = -1.29;
   g.position.set(startX,baseY,laneZ);
+  g.rotation.set(0,0,0);
 
   const rig = captureRig(model);
 
@@ -578,9 +585,26 @@ function createPig(name, index, total, laneZ, startX, finishX){
     name,index,startX,finishX,laneZ,baseY,
     model,rig,labelEl,
     seed:index*0.73+1.1,
-    displayHeight:targetHeight*crowdScale
+    displayHeight:targetHeight
   };
   return g;
+}
+
+function racersFor3D(){
+  const byName = new Map(state.racers.map(r=>[r.nickname,r]));
+  let names = [];
+
+  if(state.race?.order?.length){
+    names = state.race.order.slice(0,10).map(r=>r.nickname);
+  }else{
+    names = state.racers.slice(0,10).map(r=>r.nickname);
+  }
+
+  if(selectedPigName && byName.has(selectedPigName) && !names.includes(selectedPigName)){
+    names.push(selectedPigName);
+  }
+
+  return names.map(n=>byName.get(n)).filter(Boolean);
 }
 
 async function loadPigModel(){
@@ -597,7 +621,13 @@ async function loadPigModel(){
   for(const url of pigModelUrls){
     try{
       const gltf = await loader.loadAsync(url);
-      pigTemplate = gltf.scene;
+
+      // 실제 업로드된 GLB에는 캐릭터가 2세트 + Rigify 보조도형이 함께 들어있음.
+      // 화면에는 첫 번째 실제 캐릭터 rig만 사용해서 렉/검은 보조도형을 제거.
+      const sourceRig = gltf.scene.getObjectByName('rig');
+      if(!sourceRig) throw new Error('Piggu rig node not found');
+      sourceRig.removeFromParent();
+      pigTemplate = sourceRig;
       pigTemplate.updateMatrixWorld(true);
       pigModelReady = true;
       pigModelError = '';
@@ -636,78 +666,76 @@ function buildWorld(){
   $('winnerBanner').style.display = 'none';
   $('winnerBanner').textContent = '';
 
-  const count = state.racers.length;
-  const laneGap = count > 150 ? 0.72 : count > 100 ? 0.82 : count > 70 ? 0.95 : count > 40 ? 1.12 : 1.35;
+  const visualRacers = racersFor3D();
+  const count = visualRacers.length;
+  const totalParticipants = state.racers.length;
+
+  // 고퀄 리깅 캐릭터는 TOP10(+내 돼지)만 렌더해서 렉을 크게 줄임.
+  const laneGap = 2.15;
   const startX = -22;
   const finishX = 22;
-  const totalDepth = Math.max(22, count * laneGap + 6);
+  const totalDepth = Math.max(22,count*laneGap+5);
 
   const grass = new THREE.Mesh(
-    new THREE.PlaneGeometry(70, totalDepth + 16),
-    new THREE.MeshStandardMaterial({color:0x6fbe5f, roughness:1})
+    new THREE.PlaneGeometry(72,totalDepth+18),
+    new THREE.MeshStandardMaterial({color:0x6fbe5f,roughness:1})
   );
   grass.rotation.x = -Math.PI/2;
   grass.position.y = -1.42;
-  grass.receiveShadow = false;
   worldGroup.add(grass);
 
   const track = new THREE.Mesh(
-    new THREE.PlaneGeometry(52, totalDepth),
-    new THREE.MeshStandardMaterial({color:0xb87f4f, roughness:0.95})
+    new THREE.PlaneGeometry(54,totalDepth),
+    new THREE.MeshStandardMaterial({color:0xb47c4b,roughness:1})
   );
   track.rotation.x = -Math.PI/2;
   track.position.y = -1.35;
-  track.receiveShadow = false;
   worldGroup.add(track);
 
   for(let i=0;i<count;i++){
-    const z = (i - (count - 1)/2) * laneGap;
+    const z = (i-(count-1)/2)*laneGap;
     const line = new THREE.Mesh(
-      new THREE.PlaneGeometry(52,0.05),
-      new THREE.MeshBasicMaterial({color:0xffffff, transparent:true, opacity:0.35})
+      new THREE.PlaneGeometry(52,0.045),
+      new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.32})
     );
     line.rotation.x = -Math.PI/2;
-    line.position.set(0,-1.32,z + laneGap/2);
+    line.position.set(0,-1.315,z+laneGap/2);
     worldGroup.add(line);
   }
 
   const startLine = new THREE.Mesh(
-    new THREE.BoxGeometry(0.4,0.02,totalDepth),
-    new THREE.MeshStandardMaterial({color:0xffffff})
+    new THREE.BoxGeometry(0.35,0.02,totalDepth),
+    new THREE.MeshBasicMaterial({color:0xffffff})
   );
-  startLine.position.set(startX - 0.9,-1.24,0);
+  startLine.position.set(startX-0.8,-1.24,0);
   worldGroup.add(startLine);
 
-  const finishGroup = new THREE.Group();
-  const checkerCols = 2;
-  const checkerRows = Math.max(8, Math.ceil(totalDepth / 1.2));
-  const tileH = totalDepth / checkerRows;
-  for(let r=0;r<checkerRows;r++){
-    for(let c=0;c<checkerCols;c++){
-      const tile = new THREE.Mesh(
-        new THREE.BoxGeometry(0.48,0.05,tileH),
-        new THREE.MeshStandardMaterial({color:(r+c)%2===0?0xffffff:0x111111})
-      );
-      tile.position.set(finishX + c*0.48,-1.2,-totalDepth/2 + tileH/2 + r*tileH);
-      finishGroup.add(tile);
-    }
-  }
-  worldGroup.add(finishGroup);
+  // 결승선은 타일 수를 줄여 draw call 절약
+  const finishLine = new THREE.Mesh(
+    new THREE.BoxGeometry(0.55,0.025,totalDepth),
+    new THREE.MeshBasicMaterial({color:0xffffff})
+  );
+  finishLine.position.set(finishX,-1.23,0);
+  worldGroup.add(finishLine);
 
   for(let i=0;i<count;i++){
-    const z = (i - (count - 1)/2) * laneGap;
-    const pig = createPig(state.racers[i].nickname, i, count, z, startX, finishX);
+    const z = (i-(count-1)/2)*laneGap;
+    const racer = visualRacers[i];
+    const globalIndex = state.racers.findIndex(r=>r.nickname===racer.nickname);
+    const pig = createPig(racer.nickname,globalIndex,totalParticipants,z,startX,finishX);
     pigs.push(pig);
     worldGroup.add(pig);
   }
 
-  const camHeight = Math.max(18, 13 + count * 0.13);
-  const camZ = Math.max(18, totalDepth * 0.42);
-  camera.position.set(12, camHeight, camZ);
-  camera.lookAt(6,0,0);
-
   scene.add(worldGroup);
-  $('sceneInfo').innerHTML = `참가자 ${count}명<br>30초 레이스`;
+
+  // 전체보기: 앞쪽 3/4 TV 카메라. 돼지들은 +X(결승선)을 바라본다.
+  camera.position.set(-10,6.8,17);
+  camera.lookAt(-17,0.4,0);
+
+  $('sceneInfo').innerHTML =
+    `참가자 ${totalParticipants}명<br>3D TOP 10${selectedPigName?' + 내 돼지':''}`;
+
   renderParticipants();
   refreshMyPigSelection();
   renderTop10();
@@ -788,6 +816,10 @@ function findMyPig(){
   cameraMode = 'mine';
   localStorage.setItem('galvent_my_pig', selectedPigName);
   $('myPigName').value = selectedPigName;
+
+  // TOP10 밖 참가자여도 내 돼지는 3D 장면에 추가
+  lastSignature = '';
+  buildWorld();
   refreshMyPigSelection();
   updateMyPigBadge();
   renderTop10();
@@ -807,10 +839,10 @@ function updateCamera(){
   const pos = new THREE.Vector3();
   pig.getWorldPosition(pos);
 
-  const desired = new THREE.Vector3(pos.x - 1.8, pos.y + 2.6, pos.z + 6.4);
-  camera.position.lerp(desired, 0.08);
+  const desired = new THREE.Vector3(pos.x - 4.8,pos.y + 2.5,pos.z + 5.6);
+  camera.position.lerp(desired,0.08);
 
-  const look = new THREE.Vector3(pos.x + 1.5, pos.y + 0.7, pos.z);
+  const look = new THREE.Vector3(pos.x + 2.2,pos.y + 0.85,pos.z);
   camera.lookAt(look);
 }
 
@@ -830,7 +862,8 @@ function renderRanking(){
 function maybeRebuildWorld(){
   const sig = JSON.stringify({
     racers: state.racers.map(r=>r.nickname),
-    startedAt: state.race?.startedAt || 0
+    startedAt: state.race?.startedAt || 0,
+    selectedPigName
   });
   if(sig !== lastSignature){
     lastSignature = sig;
@@ -856,86 +889,96 @@ function updateOverlay(){
 function animatePig(pig, elapsedSec){
   const data = pig.userData;
   const rig = data.rig;
-  const total = pigs.length || 1;
+  const total = Math.max(1,state.racers.length);
   const rankMap = new Map((state.race?.order || []).map(x=>[x.nickname,x.place]));
-  const place = rankMap.get(data.name) || total;
+  const place = rankMap.get(data.name) || (data.index+1);
 
   let progress = 0;
   if(state.race){
     progress = Math.min(1,Math.max(0,(Date.now()-state.race.startedAt)/durationMs));
   }
 
-  const runSpeed = 12.5;
-  const phase = elapsedSec*runSpeed + data.seed*3.1;
+  const phase = elapsedSec*10.5 + data.seed*2.1;
+  const stride = Math.sin(phase);
+  const stride2 = Math.sin(phase+Math.PI);
   let x = data.startX;
   let winnerDance = false;
 
   if(state.race){
-    const finishBias = place===1 ? 1.02 : 0.9-((place-2)/Math.max(1,total-1))*0.24;
-    const wobble = Math.sin(elapsedSec*3.8+data.seed*5)*(1-progress)*0.55;
+    const finishBias = place===1
+      ? 1.018
+      : 0.91-((place-2)/Math.max(1,total-1))*0.25;
+
+    const wobble = Math.sin(elapsedSec*3.1+data.seed*5)*(1-progress)*0.45;
     const pct = progress<1
-      ? Math.max(0,Math.min(1,progress*finishBias+wobble*0.02))
-      : (place===1 ? 1.03 : Math.max(0.82,0.98-place*0.0026));
+      ? Math.max(0,Math.min(1,progress*finishBias+wobble*0.018))
+      : (place===1 ? 1.025 : Math.max(0.80,0.985-place*0.0024));
+
     x = THREE.MathUtils.lerp(data.startX,data.finishX,pct);
+
     if(progress>=1 && place===1){
       winnerDance = true;
-      x = data.finishX+0.8;
+      x = data.finishX+0.7;
     }
   }
 
   pig.position.x = x;
   pig.position.z = data.laneZ;
 
-  // 참가자가 많을 때는 모든 90~200마리의 뼈를 매 프레임 계산하지 않는다.
-  // TOP 12 + 내 돼지만 정교한 사람 달리기 모션, 나머지는 가벼운 전신 모션.
-  const detailedMotion = total <= 30 || place <= 12 || data.name === selectedPigName;
-  if(!detailedMotion && !winnerDance){
-    const moving = state.race ? 1 : 0.18;
-    pig.position.y = data.baseY + Math.max(0,Math.sin(phase*2))*0.025*moving;
-    pig.rotation.y = 0;
-    pig.rotation.z = -0.02 + Math.sin(phase)*0.018*moving;
+  // 평상시에도 시선/몸 방향은 결승선(+X)으로 고정.
+  pig.rotation.y = 0;
+
+  if(winnerDance){
+    pig.position.y = data.baseY + Math.abs(Math.sin(elapsedSec*6))*0.16;
+    pig.rotation.y = Math.sin(elapsedSec*5.5)*0.28;
+
+    setBonePose(rig,'armL',-1.20,0, Math.sin(elapsedSec*7)*0.75);
+    setBonePose(rig,'armR',-1.20,0,-Math.sin(elapsedSec*7)*0.75);
+    setBonePose(rig,'forearmL',-0.65,0,0);
+    setBonePose(rig,'forearmR',-0.65,0,0);
+    setBonePose(rig,'thighL',0,0, Math.sin(elapsedSec*6)*0.35);
+    setBonePose(rig,'thighR',0,0, Math.sin(elapsedSec*6)*0.35);
+    setBonePose(rig,'spine1',0.08,0,Math.sin(elapsedSec*5)*0.10);
+    setBonePose(rig,'head',0,0,-Math.sin(elapsedSec*5)*0.08);
     return;
   }
 
-  if(winnerDance){
-    pig.position.y = data.baseY + Math.abs(Math.sin(elapsedSec*6.5))*0.22;
-    pig.rotation.y = Math.sin(elapsedSec*5)*0.45;
-    pig.rotation.z = Math.sin(elapsedSec*8)*0.05;
+  const moving = state.race ? 1 : 0.12;
 
-    setBoneDelta(rig,'armL',_axisX,1.25+Math.sin(elapsedSec*8)*0.55);
-    setBoneDelta(rig,'armR',_axisX,-1.25-Math.sin(elapsedSec*8)*0.55);
-    setBoneDelta(rig,'forearmL',_axisX,-0.8);
-    setBoneDelta(rig,'forearmR',_axisX,-0.8);
-    setBoneDelta(rig,'thighL',_axisX,Math.sin(elapsedSec*7)*0.45);
-    setBoneDelta(rig,'thighR',_axisX,-Math.sin(elapsedSec*7)*0.45);
-    setBoneDelta(rig,'spine',_axisZ,Math.sin(elapsedSec*6)*0.10);
-    setBoneDelta(rig,'head',_axisZ,-Math.sin(elapsedSec*6)*0.08);
-  }else{
-    const moving = state.race ? 1 : 0.22;
-    const stride = Math.sin(phase);
-    const stride2 = Math.sin(phase+Math.PI);
+  // 발은 땅에 붙이고 몸 전체는 사람 달리기처럼 아주 작게 상하 이동.
+  pig.position.y = data.baseY + Math.max(0,Math.sin(phase*2))*0.055*moving;
+  pig.rotation.z = 0;
 
-    pig.position.y = data.baseY + Math.max(0,Math.sin(phase*2))*0.035*moving;
-    pig.rotation.y = 0;
-    pig.rotation.z = -0.025;
+  /*
+    Piggu 실제 rig 구조 기준:
+    - arm_ref.l/r: T-pose 팔을 먼저 아래로 내린 뒤 앞/뒤로 교차 스윙
+    - thigh_ref.l/r: 양 허벅지가 번갈아 전/후 스윙
+    - leg_ref.l/r: 뒤로 가는 다리는 무릎을 굽혀 발이 들리게 함
+    - spine refs: 상체를 결승선 쪽으로 살짝 숙임
+  */
+  const armSwing = stride*0.48*moving;
+  setBonePose(rig,'armL',-1.18,0, armSwing);
+  setBonePose(rig,'armR',-1.18,0, armSwing);
+  setBonePose(rig,'forearmL',-0.72-0.12*Math.max(0,-stride)*moving,0,0);
+  setBonePose(rig,'forearmR',-0.72-0.12*Math.max(0, stride)*moving,0,0);
 
-    // 사람 달리기처럼 반대쪽 팔/다리를 교차시킴
-    setBoneDelta(rig,'thighL',_axisX,stride*0.82*moving);
-    setBoneDelta(rig,'thighR',_axisX,stride2*0.82*moving);
-    setBoneDelta(rig,'legL',_axisX,-Math.max(0,-stride)*0.95*moving);
-    setBoneDelta(rig,'legR',_axisX,-Math.max(0,-stride2)*0.95*moving);
-    setBoneDelta(rig,'footL',_axisX,Math.max(0,stride)*0.28*moving);
-    setBoneDelta(rig,'footR',_axisX,Math.max(0,stride2)*0.28*moving);
+  // 좌우 뼈의 로컬 Z축이 거울 대칭이라 같은 값으로 주면 실제로 서로 반대로 움직임.
+  const legSwing = stride*0.62*moving;
+  setBonePose(rig,'thighL',0,0, legSwing);
+  setBonePose(rig,'thighR',0,0, legSwing);
 
-    setBoneDelta(rig,'armL',_axisX,-stride*0.88*moving);
-    setBoneDelta(rig,'armR',_axisX,-stride2*0.88*moving);
-    setBoneDelta(rig,'forearmL',_axisX,-0.62-Math.max(0,stride)*0.18*moving);
-    setBoneDelta(rig,'forearmR',_axisX,-0.62-Math.max(0,stride2)*0.18*moving);
+  // 무릎은 뒤로 빠지는 쪽에서 더 굽힘.
+  setBonePose(rig,'legL',0,0,-Math.max(0,-stride)*0.72*moving);
+  setBonePose(rig,'legR',0,0, Math.max(0, stride)*0.72*moving);
+  setBonePose(rig,'footL',0,0, Math.max(0,-stride)*0.22*moving);
+  setBonePose(rig,'footR',0,0,-Math.max(0, stride)*0.22*moving);
 
-    setBoneDelta(rig,'spine',_axisZ,-0.10*moving+Math.sin(phase*2)*0.018*moving);
-    setBoneDelta(rig,'neck',_axisZ,0.04*moving);
-    setBoneDelta(rig,'head',_axisZ,0.05*moving);
-  }
+  // 사람 달리기처럼 상체를 진행 방향으로 약간 숙이고 고개는 정면 유지.
+  setBonePose(rig,'spine1',0.12*moving,0,0);
+  setBonePose(rig,'spine2',0.04*moving,0,0);
+  setBonePose(rig,'spine3',0.02*moving,0,0);
+  setBonePose(rig,'neck',-0.05*moving,0,0);
+  setBonePose(rig,'head',-0.03*moving,0,0);
 }
 
 function updateNameLabels(){
@@ -986,22 +1029,19 @@ function updateNameLabels(){
 }
 
 function updateAllCamera(){
-  if(cameraMode !== 'all') return;
-  const count = state.racers.length;
-  const laneGap = count > 150 ? 0.72 : count > 100 ? 0.82 : count > 70 ? 0.95 : count > 40 ? 1.12 : 1.35;
-  const totalDepth = Math.max(22, count * laneGap + 6);
+  if(cameraMode !== 'all' || !pigs.length) return;
 
-  let focusX = -18;
-  if(pigs.length){
-    focusX = pigs.reduce((a,p)=>a+p.position.x,0) / pigs.length;
-  }
+  const focusX = pigs.reduce((a,p)=>a+p.position.x,0)/pigs.length;
+  const visualDepth = Math.max(20,pigs.length*2.15+5);
 
-  // 참가자가 많아도 시작선/달리는 무리가 화면 한가운데 오게 따라간다.
-  const camHeight = Math.max(17, 11 + count * 0.105);
-  const camZ = Math.max(18, totalDepth * 0.38);
-  const desired = new THREE.Vector3(focusX + 8, camHeight, camZ);
-  camera.position.lerp(desired,0.07);
-  camera.lookAt(focusX + 1.5,0.25,0);
+  // 돼지 진행 방향(+X)의 앞쪽/측면에서 보는 TV 중계 느낌.
+  const desired = new THREE.Vector3(
+    focusX+9.5,
+    6.4,
+    Math.max(15,visualDepth*0.68)
+  );
+  camera.position.lerp(desired,0.055);
+  camera.lookAt(focusX+0.7,0.45,0);
 }
 
 let lastPerfFrame = 0;
@@ -1024,12 +1064,11 @@ function animate(now=0){
   if(perfTick % 3 === 0){
     updateNameLabels();
   }
-  if(perfTick % 6 === 0){
+  if(perfTick % 9 === 0){
     updateMyPigBadge();
-    renderTop10();
   }
 
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 
 async function poll(){
