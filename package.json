@@ -1,1 +1,1 @@
-{"name":"galvent-race","version":"1.0.0","private":true,"scripts":{"start":"node server.js"},"engines":{"node":">=20"}}
+{"name":"galvent-race","version":"1.0.0","private":true,"scripts":{"start":"node server.js"},"engines":{"node":">=20"},"dependencies":{"@gurumnyang/dcinside.js":"1.15.2"}}
