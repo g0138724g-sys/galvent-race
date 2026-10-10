@@ -301,9 +301,6 @@ const pigModelUrls = ['/piggu.glb','/piggu_test.glb','/piggu_web.glb'];
 const _axisX = new THREE.Vector3(1,0,0);
 const _axisZ = new THREE.Vector3(0,0,1);
 const _tmpQ = new THREE.Quaternion();
-const _tmpQ2 = new THREE.Quaternion();
-const _tmpQ3 = new THREE.Quaternion();
-const _tmpQ4 = new THREE.Quaternion();
 const _tmpV = new THREE.Vector3();
 const durationMs = 30000;
 const bgm = new Audio('/race.mp3');
@@ -332,7 +329,7 @@ function initScene(){
     alpha:true,
     powerPreference:'high-performance'
   });
-  renderer.setPixelRatio(0.85);
+  renderer.setPixelRatio(0.8);
   renderer.setSize($('sceneWrap').clientWidth, $('sceneWrap').clientHeight, false);
   renderer.shadowMap.enabled = false;
 
@@ -462,71 +459,74 @@ function captureRig(model){
     armR: findBone(model,['arm_ref.r']),
     forearmL: findBone(model,['forearm_ref.l']),
     forearmR: findBone(model,['forearm_ref.r']),
-    handL: findBone(model,['hand_ref.l']),
-    handR: findBone(model,['hand_ref.r']),
     thighL: findBone(model,['thigh_ref.l']),
     thighR: findBone(model,['thigh_ref.r']),
     legL: findBone(model,['leg_ref.l']),
     legR: findBone(model,['leg_ref.r']),
     footL: findBone(model,['foot_ref.l']),
-    footR: findBone(model,['foot_ref.r']),
-    spine1: findBone(model,['spine_01_ref.x']),
-    spine2: findBone(model,['spine_02_ref.x']),
-    spine3: findBone(model,['spine_03_ref.x']),
-    neck: findBone(model,['neck_ref.x']),
-    head: findBone(model,['head_ref.x'])
+    footR: findBone(model,['foot_ref.r'])
   };
 
-  // 중요: 이 Piggu 리그의 bone local axis는 팔/다리마다 제각각임.
-  // 그래서 local Euler를 억지로 넣지 않고, "모델 좌표계" 기준 회전을
-  // 각 bone의 parent-local quaternion으로 변환해서 적용한다.
   model.updateWorldMatrix(true,true);
   const modelWorldQ = new THREE.Quaternion();
   model.getWorldQuaternion(modelWorldQ);
   const invModelWorldQ = modelWorldQ.clone().invert();
 
   const restModel = {};
-  for(const [k,b] of Object.entries(bones)){
-    if(!b) continue;
-    const bw = new THREE.Quaternion();
-    b.getWorldQuaternion(bw);
-    restModel[k] = invModelWorldQ.clone().multiply(bw);
+  const restDir = {};
+  const localY = new THREE.Vector3(0,1,0);
+
+  for(const [key,bone] of Object.entries(bones)){
+    if(!bone) continue;
+
+    const boneWorldQ = new THREE.Quaternion();
+    bone.getWorldQuaternion(boneWorldQ);
+
+    // Bone rest orientation expressed in Piggu model-local coordinates.
+    const q = invModelWorldQ.clone().multiply(boneWorldQ);
+    restModel[key] = q;
+
+    // In Blender/glTF bones extend along their local +Y axis.
+    restDir[key] = localY.clone().applyQuaternion(q).normalize();
   }
 
-  return {bones,restModel,modelRoot:model};
+  return {bones,restModel,restDir,modelRoot:model};
 }
 
-function setBoneModelPose(rig,key,xAngle=0,zAngle=0){
+const _aimFrom = new THREE.Vector3();
+const _aimTo = new THREE.Vector3();
+const _aimDelta = new THREE.Quaternion();
+const _aimDesiredModel = new THREE.Quaternion();
+const _aimModelWorld = new THREE.Quaternion();
+const _aimParentWorld = new THREE.Quaternion();
+const _aimDesiredWorld = new THREE.Quaternion();
+
+function aimBoneModel(rig,key,x,y,z){
   const bone = rig.bones[key];
-  const rest = rig.restModel[key];
-  if(!bone || !rest || !bone.parent) return;
+  const restQ = rig.restModel[key];
+  const restD = rig.restDir[key];
+  if(!bone || !restQ || !restD || !bone.parent) return;
 
-  // 원하는 절대 자세를 Piggu 원본 모델 좌표계에서 만든다.
-  // 원본: +Z = 얼굴/진행방향, +Y = 위, +X = 좌우.
-  _tmpQ.copy(rest);
+  _aimTo.set(x,y,z);
+  if(_aimTo.lengthSq() < 1e-8) return;
+  _aimTo.normalize();
+  _aimFrom.copy(restD);
 
-  if(Math.abs(zAngle) > 1e-6){
-    _tmpQ2.setFromAxisAngle(_axisZ,zAngle);
-    _tmpQ.premultiply(_tmpQ2);
-  }
-  if(Math.abs(xAngle) > 1e-6){
-    _tmpQ2.setFromAxisAngle(_axisX,xAngle);
-    _tmpQ.premultiply(_tmpQ2);
-  }
+  // Rotate the original bone direction to the requested model-space direction.
+  // This avoids guessing each bone's strange Rigify local rotation axes.
+  _aimDelta.setFromUnitVectors(_aimFrom,_aimTo);
+  _aimDesiredModel.copy(restQ).premultiply(_aimDelta);
 
-  // model-space desired quaternion -> 현재 parent-local quaternion
   rig.modelRoot.updateWorldMatrix(true,false);
   bone.parent.updateWorldMatrix(true,false);
 
-  rig.modelRoot.getWorldQuaternion(_tmpQ2);
-  bone.parent.getWorldQuaternion(_tmpQ3);
+  rig.modelRoot.getWorldQuaternion(_aimModelWorld);
+  bone.parent.getWorldQuaternion(_aimParentWorld);
 
-  // parent orientation relative to model
-  _tmpQ4.copy(_tmpQ2).invert().multiply(_tmpQ3);
+  _aimDesiredWorld.copy(_aimModelWorld).multiply(_aimDesiredModel);
 
-  // local = inverse(parentModel) * desiredModel
-  _tmpQ4.invert().multiply(_tmpQ);
-  bone.quaternion.copy(_tmpQ4);
+  // local = inverse(parentWorld) * desiredWorld
+  bone.quaternion.copy(_aimParentWorld).invert().multiply(_aimDesiredWorld);
   bone.updateMatrixWorld(true);
 }
 
@@ -567,91 +567,6 @@ function characterBounds(model){
   return meshBox;
 }
 
-
-function optimizePigRig(root){
-  const skinned = [];
-  root.traverse(o=>{
-    if(o.isSkinnedMesh && o.skeleton && o.geometry?.getAttribute('skinIndex')){
-      skinned.push(o);
-    }
-  });
-  if(!skinned.length) return {before:0,after:0};
-
-  const referenceSkeleton = skinned[0].skeleton;
-  const before = referenceSkeleton.bones.length;
-  const used = new Set();
-
-  // Draco가 풀린 뒤 실제 vertex weight를 보고 "진짜로 쓰는 joint"만 찾는다.
-  for(const mesh of skinned){
-    const si = mesh.geometry.getAttribute('skinIndex');
-    const sw = mesh.geometry.getAttribute('skinWeight');
-    if(!si || !sw) continue;
-
-    const itemSize = Math.min(si.itemSize,sw.itemSize);
-    for(let i=0;i<si.count;i++){
-      const baseI = i*si.itemSize;
-      const baseW = i*sw.itemSize;
-      for(let c=0;c<itemSize;c++){
-        const w = sw.array[baseW+c];
-        if(w !== 0) used.add(Number(si.array[baseI+c]));
-      }
-    }
-  }
-
-  const usedOld = [...used].sort((a,b)=>a-b);
-  const remap = new Map(usedOld.map((oldIndex,newIndex)=>[oldIndex,newIndex]));
-
-  for(const mesh of skinned){
-    const oldSkeleton = mesh.skeleton;
-    const geo = mesh.geometry.clone();
-    const si = geo.getAttribute('skinIndex');
-    const sw = geo.getAttribute('skinWeight');
-
-    if(si && sw){
-      const itemSize = Math.min(si.itemSize,sw.itemSize);
-      for(let i=0;i<si.count;i++){
-        const baseI = i*si.itemSize;
-        const baseW = i*sw.itemSize;
-        for(let c=0;c<itemSize;c++){
-          const w = sw.array[baseW+c];
-          const oldIndex = Number(si.array[baseI+c]);
-          si.array[baseI+c] = w !== 0 ? (remap.get(oldIndex) ?? 0) : 0;
-        }
-      }
-      si.needsUpdate = true;
-    }
-
-    mesh.geometry = geo;
-
-    const bones = usedOld.map(i=>oldSkeleton.bones[i]).filter(Boolean);
-    const inverses = usedOld.map(i=>oldSkeleton.boneInverses[i]?.clone() ?? new THREE.Matrix4());
-    const reducedSkeleton = new THREE.Skeleton(bones,inverses);
-    mesh.bind(reducedSkeleton,mesh.bindMatrix.clone());
-  }
-
-  // skin에는 안 쓰면서 Rigify가 내보낸 수백 개 control branch도 제거.
-  const keep = new Set([root,...skinned]);
-  for(const oldIndex of usedOld){
-    let o = referenceSkeleton.bones[oldIndex];
-    while(o){
-      keep.add(o);
-      if(o === root) break;
-      o = o.parent;
-    }
-  }
-
-  const prune = [];
-  root.traverse(o=>{
-    if(o === root || o.isSkinnedMesh) return;
-    if(o.parent && keep.has(o.parent) && !keep.has(o)){
-      prune.push(o);
-    }
-  });
-  for(const o of prune) o.removeFromParent();
-
-  return {before,after:usedOld.length};
-}
-
 function createPig(name, index, total, laneZ, startX, finishX){
   const g = new THREE.Group();
   const facing = new THREE.Group();
@@ -662,32 +577,29 @@ function createPig(name, index, total, laneZ, startX, finishX){
       o.visible = true;
       o.castShadow = false;
       o.receiveShadow = false;
-      // 눈/코/몸이 별도 SkinnedMesh라 부분 소실 방지
+
+      // Piggu is split into Body / Head / Nose / Eyes / Teeth / Tongue.
+      // Keep all pieces alive so eyes/body cannot vanish independently.
       o.frustumCulled = false;
-      if(o.material){
-        const mats = Array.isArray(o.material) ? o.material : [o.material];
-        for(const m of mats){
-          m.side = THREE.DoubleSide;
-        }
-      }
     }
   });
 
   /*
-    업로드한 piggu.glb 실제 mesh bounds를 다시 확인함:
-    Y 약 0.01 ~ 13.48. 따라서 동적 Box3 재센터링을 하지 않고
-    원본 중심/발 위치를 그대로 쓰는 게 가장 안전함.
+    Verified from the uploaded GLB:
+      character geometry Y ≈ 0.01 .. 13.48
+    so 0.18 gives a ~2.43-world-unit tall character.
+    Do not recenter or calculate bounds from Rigify helper bones.
   */
-  model.scale.setScalar(0.130);
+  model.scale.setScalar(0.18);
   model.position.set(0,0,0);
 
-  // 원본 Piggu는 +Z를 바라봄. 레이스 결승선은 +X.
+  // Piggu's nose faces native +Z. Race finish is +X.
   facing.rotation.set(0,Math.PI/2,0);
   facing.add(model);
   g.add(facing);
 
   const labelEl = makeNameTag(name);
-  const baseY = -1.33;
+  const baseY = -1.345; // feet sit almost exactly on the track at y=-1.35
   g.position.set(startX,baseY,laneZ);
 
   g.updateWorldMatrix(true,true);
@@ -697,7 +609,7 @@ function createPig(name, index, total, laneZ, startX, finishX){
     name,index,startX,finishX,laneZ,baseY,
     model,facing,rig,labelEl,
     seed:index*0.73+1.1,
-    displayHeight:1.76
+    displayHeight:2.43
   };
   return g;
 }
@@ -738,17 +650,11 @@ async function loadPigModel(){
       // 화면에는 첫 번째 실제 캐릭터 rig만 사용해서 렉/검은 보조도형을 제거.
       const sourceRig = gltf.scene.getObjectByName('rig');
       if(!sourceRig) throw new Error('Piggu rig node not found');
-
-      // 파일 안에 char_grp / char_grp.001 두 캐릭터가 중복으로 들어있음.
-      // 첫 번째 실제 rig만 떼어내고, 실제 vertex가 쓰는 joint만 남긴다.
       sourceRig.removeFromParent();
-      const rigStats = optimizePigRig(sourceRig);
-
       pigTemplate = sourceRig;
       pigTemplate.updateMatrixWorld(true);
       pigModelReady = true;
       pigModelError = '';
-      console.log(`Piggu rig optimized: ${rigStats.before} -> ${rigStats.after} joints`);
       setSub('3D 돼지 모델 준비 완료');
       lastSignature = '';
       maybeRebuildWorld();
@@ -789,7 +695,7 @@ function buildWorld(){
   const totalParticipants = state.racers.length;
 
   // 고퀄 리깅 캐릭터는 TOP10(+내 돼지)만 렌더해서 렉을 크게 줄임.
-  const laneGap = 2.45;
+  const laneGap = 2.70;
   const startX = -22;
   const finishX = 22;
   const totalDepth = Math.max(22,count*laneGap+5);
@@ -848,8 +754,8 @@ function buildWorld(){
   scene.add(worldGroup);
 
   // 전체보기: 앞쪽 3/4 TV 카메라. 돼지들은 +X(결승선)을 바라본다.
-  camera.position.set(-10,6.8,17);
-  camera.lookAt(-17,0.4,0);
+  camera.position.set(-6.5,5.6,14.5);
+  camera.lookAt(-17,0.2,0);
 
   $('sceneInfo').innerHTML =
     `참가자 ${totalParticipants}명<br>3D TOP 10${selectedPigName?' + 내 돼지':''}`;
@@ -957,10 +863,10 @@ function updateCamera(){
   const pos = new THREE.Vector3();
   pig.getWorldPosition(pos);
 
-  const desired = new THREE.Vector3(pos.x - 6.8,pos.y + 3.2,pos.z + 6.8);
+  const desired = new THREE.Vector3(pos.x - 5.8,pos.y + 3.0,pos.z + 6.2);
   camera.position.lerp(desired,0.075);
 
-  const look = new THREE.Vector3(pos.x + 2.2,pos.y + 0.35,pos.z);
+  const look = new THREE.Vector3(pos.x + 2.0,pos.y + 0.55,pos.z);
   camera.lookAt(look);
 }
 
@@ -1015,7 +921,7 @@ function animatePig(pig, elapsedSec, rankMap){
     progress = Math.min(1,Math.max(0,(Date.now()-state.race.startedAt)/durationMs));
   }
 
-  const phase = elapsedSec*9.4 + data.seed*1.45;
+  const phase = elapsedSec*9.0 + data.seed*1.30;
   const stride = Math.sin(phase);
   let x = data.startX;
   let winnerDance = false;
@@ -1041,67 +947,71 @@ function animatePig(pig, elapsedSec, rankMap){
   pig.position.x = x;
   pig.position.z = data.laneZ;
 
-  // 모든 돼지는 항상 +X 결승선을 바라본다.
+  // Character orientation never changes during the race: always face the finish (+X).
   data.facing.rotation.y = Math.PI/2;
 
   if(winnerDance){
-    pig.position.y = data.baseY + Math.abs(Math.sin(elapsedSec*6.0))*0.10;
-    pig.rotation.z = Math.sin(elapsedSec*6.5)*0.05;
+    pig.position.y = data.baseY + Math.abs(Math.sin(elapsedSec*6))*0.10;
 
-    // 골인 후 팔을 들고 춤. rest/model-space 기준이라 몸이 찢어지지 않음.
-    setBoneModelPose(rig,'armL',-0.25,-0.55);
-    setBoneModelPose(rig,'armR', 0.25, 0.55);
-    setBoneModelPose(rig,'forearmL',-0.55,-0.55);
-    setBoneModelPose(rig,'forearmR',-0.55, 0.55);
-    setBoneModelPose(rig,'thighL', Math.sin(elapsedSec*6)*0.20,0);
-    setBoneModelPose(rig,'thighR',-Math.sin(elapsedSec*6)*0.20,0);
+    // Simple safe celebration using direction targets instead of raw joint Euler guesses.
+    aimBoneModel(rig,'armL', 0.20,0.65, 0.73);
+    aimBoneModel(rig,'armR',-0.20,0.65, 0.73);
+    aimBoneModel(rig,'forearmL', 0.10,0.72, 0.68);
+    aimBoneModel(rig,'forearmR',-0.10,0.72, 0.68);
     return;
   }
 
-  const moving = state.race ? 1 : 0.06;
+  const moving = state.race ? 1 : 0.04;
 
-  // 몸 전체는 발이 땅에서 뜬 것처럼 보이지 않을 정도로만 위아래 움직임
-  pig.position.y = data.baseY + Math.max(0,Math.sin(phase*2))*0.035*moving;
-  pig.rotation.z = -0.035*moving;
+  // Small runner bounce only; never float high above the track.
+  pig.position.y = data.baseY + Math.max(0,Math.sin(phase*2))*0.045*moving;
 
   /*
-    실제 Piggu rest pose는 팔이 좌우로 펼쳐져 있음.
-    모델 좌표:
-      +Z = 얼굴/진행방향
-      +Y = 위
-      +X = 좌우
-
-    1) Z축 ±90°로 양팔을 자연스럽게 아래로 내림
-    2) X축으로 앞/뒤 교차 스윙
-    3) 다리도 X축으로 반대 위상 스윙
+    Native Piggu axes:
+      X = left/right
+      Y = up
+      Z = face/forward
+    We aim each deform bone by direction in that coordinate system.
+    This is much safer than rotating Rigify local axes directly.
   */
-  const leftArmSwing  =  stride*0.48*moving;   // 왼팔 뒤/앞
-  const rightArmSwing = -stride*0.48*moving;   // 오른팔 반대
-  const leftLegSwing  = -stride*0.56*moving;   // 왼다리 앞/뒤
-  const rightLegSwing =  stride*0.56*moving;   // 오른다리 반대
 
-  // 팔: rest T-pose -> 아래로 -> 사람 달리기처럼 교차
-  setBoneModelPose(rig,'armL',leftArmSwing,-Math.PI/2);
-  setBoneModelPose(rig,'armR',rightArmSwing, Math.PI/2);
+  // Human-style opposite arm/leg swing.
+  const leftLegZ  =  stride*0.46*moving;
+  const rightLegZ = -stride*0.46*moving;
 
-  // 팔꿈치는 기본적으로 약 55~65도 굽힌 자세
-  setBoneModelPose(rig,'forearmL',leftArmSwing-0.72,-Math.PI/2);
-  setBoneModelPose(rig,'forearmR',rightArmSwing-0.72, Math.PI/2);
+  const leftArmZ  = -stride*0.58*moving;
+  const rightArmZ =  stride*0.58*moving;
 
-  // 허벅지
-  setBoneModelPose(rig,'thighL',leftLegSwing,0);
-  setBoneModelPose(rig,'thighR',rightLegSwing,0);
+  // Upper arms: mostly down, slightly out, swinging front/back.
+  aimBoneModel(rig,'armL', 0.18,-0.80,leftArmZ);
+  aimBoneModel(rig,'armR',-0.18,-0.80,rightArmZ);
 
-  // 뒤로 빠지는 다리는 무릎을 크게 굽힘
-  const kneeL = (0.10 + Math.max(0,-stride)*0.72)*moving;
-  const kneeR = (0.10 + Math.max(0, stride)*0.72)*moving;
+  // Elbows stay bent instead of straight "zombie" arms.
+  aimBoneModel(rig,'forearmL', 0.08,-0.42,0.78 + leftArmZ*0.22);
+  aimBoneModel(rig,'forearmR',-0.08,-0.42,0.78 + rightArmZ*0.22);
 
-  setBoneModelPose(rig,'legL',leftLegSwing+kneeL,0);
-  setBoneModelPose(rig,'legR',rightLegSwing+kneeR,0);
+  // Thighs alternate.
+  aimBoneModel(rig,'thighL', 0.09,-0.92,leftLegZ);
+  aimBoneModel(rig,'thighR',-0.09,-0.92,rightLegZ);
 
-  // 발은 무릎에 그대로 끌려가지 않도록 살짝 보정
-  setBoneModelPose(rig,'footL',leftLegSwing+kneeL*0.18,0);
-  setBoneModelPose(rig,'footR',rightLegSwing+kneeR*0.18,0);
+  // Bend the knee more when that leg is trailing behind.
+  const bendL = Math.max(0,-stride)*moving;
+  const bendR = Math.max(0, stride)*moving;
+
+  aimBoneModel(rig,'legL',
+    0.06,
+    -0.94 + bendL*0.28,
+    -0.18 - bendL*0.55
+  );
+  aimBoneModel(rig,'legR',
+    -0.06,
+    -0.94 + bendR*0.28,
+    -0.18 - bendR*0.55
+  );
+
+  // Feet inherit the shin movement; only a mild forward direction keeps them from flipping.
+  aimBoneModel(rig,'footL', 0.03,-0.30,0.95);
+  aimBoneModel(rig,'footR',-0.03,-0.30,0.95);
 }
 
 function updateNameLabels(){
@@ -1155,18 +1065,18 @@ function updateAllCamera(){
   if(cameraMode !== 'all' || !pigs.length) return;
 
   const focusX = pigs.reduce((a,p)=>a+p.position.x,0)/pigs.length;
-  const visualDepth = Math.max(26,pigs.length*2.45+7);
+  const visualDepth = Math.max(28,pigs.length*2.70+6);
 
-  // 결승선 앞쪽의 3/4 TV 카메라:
-  // 얼굴/눈 + 발끝까지 전신 + TOP10 라인이 같이 들어오게 여유 있게 잡음.
+  // Camera sits in front of the racers (+X), so we actually see eyes/faces.
+  // Diagonal Z offset keeps the "TV race" perspective.
   const desired = new THREE.Vector3(
-    focusX+24,
-    8.3,
-    Math.max(22,visualDepth*0.80)
+    focusX+15.5,
+    5.6,
+    Math.max(13.5,visualDepth*0.48)
   );
 
-  camera.position.lerp(desired,0.045);
-  camera.lookAt(focusX+1.5,-0.10,0);
+  camera.position.lerp(desired,0.05);
+  camera.lookAt(focusX+1.0,-0.05,0);
 }
 
 let lastPerfFrame = 0;
@@ -1176,7 +1086,7 @@ function animate(now=0){
   requestAnimationFrame(animate);
 
   // 30fps 제한: 참가자가 많아도 브라우저가 과하게 GPU/CPU를 쓰지 않게 함
-  if(now - lastPerfFrame < 33) return;
+  if(now - lastPerfFrame < 41) return;
   lastPerfFrame = now;
   perfTick++;
 
