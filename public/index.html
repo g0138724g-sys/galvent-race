@@ -58,6 +58,25 @@
       background:linear-gradient(180deg,#8fd9ff 0%,#daf7ff 40%,#88cf74 40%,#64ad52 100%);
     }
     #scene{width:100%;height:100%;display:block}
+    #nameLayer{
+      position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5;
+    }
+    .pigNameTag{
+      position:absolute;left:0;top:0;transform:translate(-50%,-100%);
+      padding:3px 7px;border-radius:9px;background:rgba(255,255,255,.94);
+      border:1px solid rgba(0,0,0,.18);box-shadow:0 2px 7px rgba(0,0,0,.22);
+      font-size:12px;line-height:1.15;font-weight:900;color:#171717;
+      white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;
+      will-change:transform;
+    }
+    .pigNameTag.top10{
+      padding:4px 8px;background:rgba(255,245,180,.97);
+      border:2px solid #f4bd35;font-size:14px;z-index:7;
+    }
+    .pigNameTag.mine{
+      padding:5px 10px;background:rgba(255,220,239,.98);
+      border:2px solid #ff4e9a;color:#d90062;font-size:16px;z-index:9;
+    }
     .overlay{
       position:absolute;inset:0;
       pointer-events:none;
@@ -220,6 +239,7 @@
   <div class="panel scenePanel">
     <div id="sceneWrap">
       <canvas id="scene"></canvas>
+      <div id="nameLayer"></div>
       <div class="overlay">
         <div class="timerBadge" id="timer">대기 중</div>
         <div class="myPigBadge" id="myPigBadge"></div>
@@ -249,8 +269,18 @@
   </div>
 </div>
 
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.166.1/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.166.1/examples/jsm/"
+  }
+}
+</script>
 <script type="module">
-import * as THREE from 'https://unpkg.com/three@0.166.1/build/three.module.js';
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 
 const $ = id => document.getElementById(id);
 
@@ -263,6 +293,14 @@ let musicEnabled = true;
 let finishShown = false;
 let selectedPigName = localStorage.getItem('galvent_my_pig') || '';
 let cameraMode = selectedPigName ? 'mine' : 'all';
+let pigTemplate = null;
+let pigModelReady = false;
+let pigModelError = '';
+const pigModelUrls = ['/piggu.glb','/piggu_test.glb','/piggu_web.glb'];
+const _axisX = new THREE.Vector3(1,0,0);
+const _axisZ = new THREE.Vector3(0,0,1);
+const _tmpQ = new THREE.Quaternion();
+const _tmpV = new THREE.Vector3();
 const durationMs = 30000;
 const bgm = new Audio('/race.mp3');
 bgm.loop = true;
@@ -395,166 +433,148 @@ function makeMyMarker(){
   return sprite;
 }
 
+function findBone(root, candidates){
+  for(const n of candidates){
+    const exact = root.getObjectByName(n);
+    if(exact && exact.isBone) return exact;
+  }
+  const wanted = candidates.map(x=>x.toLowerCase());
+  let found = null;
+  root.traverse(o=>{
+    if(found || !o.isBone) return;
+    const n = String(o.name || '').toLowerCase();
+    if(wanted.includes(n)) found = o;
+  });
+  return found;
+}
+
+function captureRig(model){
+  const bones = {
+    armL: findBone(model,['arm.l','c_arm_fk.l']),
+    armR: findBone(model,['arm.r','c_arm_fk.r']),
+    forearmL: findBone(model,['forearm.l','c_forearm_fk.l']),
+    forearmR: findBone(model,['forearm.r','c_forearm_fk.r']),
+    thighL: findBone(model,['thigh.l','c_thigh_fk.l']),
+    thighR: findBone(model,['thigh.r','c_thigh_fk.r']),
+    legL: findBone(model,['leg.l','c_leg_fk.l']),
+    legR: findBone(model,['leg.r','c_leg_fk.r']),
+    footL: findBone(model,['foot.l','c_foot_fk.l']),
+    footR: findBone(model,['foot.r','c_foot_fk.r']),
+    spine: findBone(model,['_spine_01.x','spine_01.x','spine.x','c_spine_01.x']),
+    neck: findBone(model,['neck.x','c_neck.x']),
+    head: findBone(model,['head.x','c_head.x'])
+  };
+  const rest = {};
+  for(const [k,b] of Object.entries(bones)){
+    if(b) rest[k] = b.quaternion.clone();
+  }
+  return {bones,rest};
+}
+
+function setBoneDelta(rig,key,axis,angle){
+  const b = rig.bones[key];
+  const q0 = rig.rest[key];
+  if(!b || !q0) return;
+  _tmpQ.setFromAxisAngle(axis,angle);
+  b.quaternion.copy(q0).multiply(_tmpQ);
+}
+
+function makeNameTag(name){
+  const el = document.createElement('div');
+  el.className = 'pigNameTag';
+  el.textContent = name;
+  $('nameLayer').appendChild(el);
+  return el;
+}
+
 function createPig(name, index, total, laneZ, startX, finishX){
   const g = new THREE.Group();
+  const model = cloneSkeleton(pigTemplate);
 
-  const skinTones=[0xf5b59f,0xe4a07f,0xc78f72,0xf2c0a7];
-  const outfitColors=[0x3f7ee8,0x2eae63,0xe84e5b,0xf2a930,0x8656d9,0x18a7b8,0xe66fa0,0x74a943];
-  const shortsColors=[0x2d5fb8,0x19874a,0xb93645,0xd37e13,0x6238af,0x117a86,0xb84b77,0x557d31];
-  const skin=new THREE.MeshStandardMaterial({color:skinTones[index%skinTones.length],roughness:0.88,metalness:0.02});
-  const skin2=new THREE.MeshStandardMaterial({color:0xe98f82,roughness:0.9});
-  const outfit=new THREE.MeshStandardMaterial({color:outfitColors[index%outfitColors.length],roughness:0.82});
-  const shortsMat=new THREE.MeshStandardMaterial({color:shortsColors[index%shortsColors.length],roughness:0.86});
-  const white=new THREE.MeshStandardMaterial({color:0xffffff,roughness:0.8});
-  const black=new THREE.MeshStandardMaterial({color:0x151515,roughness:0.9});
-  const sole=new THREE.MeshStandardMaterial({color:0xe34848,roughness:0.9});
+  model.traverse(o=>{
+    if(o.isMesh){
+      o.castShadow = true;
+      o.receiveShadow = true;
+      o.frustumCulled = true;
+    }
+  });
 
-  const torso=new THREE.Mesh(new THREE.SphereGeometry(0.66,24,24),skin);
-  torso.scale.set(0.95,1.15,0.86);
-  torso.position.set(0,1.28,0);
-  torso.castShadow=true;
-  g.add(torso);
+  let box = new THREE.Box3().setFromObject(model);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const targetHeight = 2.35;
+  const modelScale = targetHeight / Math.max(0.001,size.y);
+  model.scale.setScalar(modelScale);
 
-  const shirt=new THREE.Mesh(new THREE.SphereGeometry(0.61,24,24),outfit);
-  shirt.scale.set(0.98,0.9,0.9);
-  shirt.position.set(0.02,1.34,0);
-  shirt.castShadow=true;
-  g.add(shirt);
+  box = new THREE.Box3().setFromObject(model);
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+  model.position.x -= center.x;
+  model.position.z -= center.z;
+  model.position.y -= box.min.y;
 
-  const belly=new THREE.Mesh(new THREE.SphereGeometry(0.42,20,20),skin);
-  belly.scale.set(0.95,0.88,0.82);
-  belly.position.set(0.18,1.15,0);
-  belly.castShadow=true;
-  g.add(belly);
+  // Blender 캐릭터를 레이스 진행방향(+X)으로 회전
+  model.rotation.y = Math.PI / 2;
 
-  const shorts=new THREE.Mesh(new THREE.SphereGeometry(0.48,20,20),shortsMat);
-  shorts.scale.set(1.02,0.62,0.9);
-  shorts.position.set(-0.04,0.92,0);
-  shorts.castShadow=true;
-  g.add(shorts);
+  const crowdScale = total > 150 ? 0.52 : total > 100 ? 0.60 : total > 70 ? 0.68 : total > 40 ? 0.78 : 0.88;
+  g.scale.setScalar(crowdScale);
+  g.add(model);
 
-  const head=new THREE.Mesh(new THREE.SphereGeometry(0.48,24,24),skin);
-  head.scale.set(1.08,0.98,0.94);
-  head.position.set(0.7,2.0,0);
-  head.castShadow=true;
-  g.add(head);
-
-  const snout=new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.19,0.32,20),skin2);
-  snout.rotation.z=Math.PI/2;
-  snout.position.set(1.1,1.9,0);
-  snout.castShadow=true;
-  g.add(snout);
-
-  const nostrilGeo=new THREE.SphereGeometry(0.028,10,10);
-  const nostrilMat=new THREE.MeshStandardMaterial({color:0x7a3e45,roughness:0.95});
-  const nostril1=new THREE.Mesh(nostrilGeo,nostrilMat);
-  const nostril2=nostril1.clone();
-  nostril1.position.set(1.26,1.9,-0.055);
-  nostril2.position.set(1.26,1.9,0.055);
-  g.add(nostril1,nostril2);
-
-  const eyeGeo=new THREE.SphereGeometry(0.065,12,12);
-  const eye1=new THREE.Mesh(eyeGeo,white);
-  const eye2=eye1.clone();
-  eye1.position.set(0.91,2.1,-0.17);
-  eye2.position.set(0.91,2.1,0.17);
-  const pupil1=new THREE.Mesh(new THREE.SphereGeometry(0.027,10,10),black);
-  const pupil2=pupil1.clone();
-  pupil1.position.set(0.965,2.09,-0.17);
-  pupil2.position.set(0.965,2.09,0.17);
-  g.add(eye1,eye2,pupil1,pupil2);
-
-  const earGeo=new THREE.ConeGeometry(0.12,0.28,4);
-  const earL=new THREE.Mesh(earGeo,skin2);
-  const earR=earL.clone();
-  earL.position.set(0.5,2.42,-0.22);
-  earR.position.set(0.5,2.42,0.22);
-  earL.rotation.z=-0.55; earL.rotation.x=-0.25;
-  earR.rotation.z=-0.55; earR.rotation.x=0.25;
-  g.add(earL,earR);
-
-  const armPivotL=new THREE.Group();
-  const armPivotR=new THREE.Group();
-  armPivotL.position.set(0.18,1.65,-0.43);
-  armPivotR.position.set(0.18,1.65,0.43);
-  g.add(armPivotL,armPivotR);
-
-  const armGeo=new THREE.CapsuleGeometry(0.085,0.42,6,10);
-  const leftArm=new THREE.Mesh(armGeo,skin);
-  const rightArm=new THREE.Mesh(armGeo,skin);
-  leftArm.position.y=-0.3;
-  rightArm.position.y=-0.3;
-  leftArm.castShadow=true;
-  rightArm.castShadow=true;
-  armPivotL.add(leftArm);
-  armPivotR.add(rightArm);
-
-  const handGeo=new THREE.SphereGeometry(0.09,12,12);
-  const handL=new THREE.Mesh(handGeo,skin);
-  const handR=handL.clone();
-  handL.position.set(0,-0.58,0);
-  handR.position.set(0,-0.58,0);
-  armPivotL.add(handL);
-  armPivotR.add(handR);
-
-  const legPivotL=new THREE.Group();
-  const legPivotR=new THREE.Group();
-  legPivotL.position.set(-0.08,0.88,-0.2);
-  legPivotR.position.set(-0.08,0.88,0.2);
-  g.add(legPivotL,legPivotR);
-
-  const legGeo=new THREE.CapsuleGeometry(0.1,0.48,6,10);
-  const leftLeg=new THREE.Mesh(legGeo,skin);
-  const rightLeg=new THREE.Mesh(legGeo,skin);
-  leftLeg.position.y=-0.38;
-  rightLeg.position.y=-0.38;
-  leftLeg.castShadow=true;
-  rightLeg.castShadow=true;
-  legPivotL.add(leftLeg);
-  legPivotR.add(rightLeg);
-
-  const shoeGeo=new THREE.BoxGeometry(0.32,0.12,0.18);
-  const shoeL=new THREE.Mesh(shoeGeo,white);
-  const shoeR=shoeL.clone();
-  shoeL.position.set(0.11,-0.72,0);
-  shoeR.position.set(0.11,-0.72,0);
-  legPivotL.add(shoeL);
-  legPivotR.add(shoeR);
-
-  const toeGeo=new THREE.SphereGeometry(0.095,12,12);
-  const toeL=new THREE.Mesh(toeGeo,sole);
-  const toeR=toeL.clone();
-  toeL.scale.set(1.4,0.65,0.9);
-  toeR.scale.set(1.4,0.65,0.9);
-  toeL.position.set(0.25,-0.71,0);
-  toeR.position.set(0.25,-0.71,0);
-  legPivotL.add(toeL);
-  legPivotR.add(toeR);
-
-  const tail=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.027,8,18),skin2);
-  tail.position.set(-0.69,1.25,0);
-  tail.rotation.y=Math.PI/2;
-  g.add(tail);
-
-  const label=makeLabel(name);
-  label.position.set(0,3.02,0);
-  g.add(label);
-
-  const myMarker=makeMyMarker();
-  myMarker.position.set(0,4.15,0);
-  g.add(myMarker);
-
-  const pigScale=total>120?0.28:total>90?0.32:total>60?0.38:0.48;
-  const baseY=-1.24;
-  g.scale.setScalar(pigScale);
+  const labelEl = makeNameTag(name);
+  const baseY = -1.30;
   g.position.set(startX,baseY,laneZ);
-  g.rotation.y=0;
-  g.userData={name,index,startX,finishX,laneZ,baseY,leftArm:armPivotL,rightArm:armPivotR,leftLeg:legPivotL,rightLeg:legPivotR,body:torso,head,label,tail,myMarker,shirt,shorts,seed:index*0.73+1.1};
+
+  const rig = captureRig(model);
+
+  g.userData = {
+    name,index,startX,finishX,laneZ,baseY,
+    model,rig,labelEl,
+    seed:index*0.73+1.1,
+    displayHeight:targetHeight*crowdScale
+  };
   return g;
+}
+
+async function loadPigModel(){
+  const loader = new GLTFLoader();
+  let lastErr = null;
+
+  for(const url of pigModelUrls){
+    try{
+      const gltf = await loader.loadAsync(url);
+      pigTemplate = gltf.scene;
+      pigTemplate.updateMatrixWorld(true);
+      pigModelReady = true;
+      pigModelError = '';
+      setSub('3D 돼지 모델 준비 완료');
+      lastSignature = '';
+      maybeRebuildWorld();
+      return;
+    }catch(e){
+      lastErr = e;
+    }
+  }
+
+  pigModelError = 'piggu.glb를 불러오지 못했습니다.';
+  console.error(lastErr);
+  setSub('3D 돼지 모델 파일 확인 필요: public/piggu.glb');
+}
+
+function clearNameLabels(){
+  const layer = $('nameLayer');
+  while(layer.firstChild) layer.removeChild(layer.firstChild);
 }
 
 function buildWorld(){
   if(worldGroup) scene.remove(worldGroup);
+  clearNameLabels();
+
+  if(!pigModelReady || !pigTemplate){
+    worldGroup = null;
+    $('sceneInfo').innerHTML = pigModelError ? '3D 모델 오류' : '🐷 3D 돼지 로딩중...';
+    return;
+  }
+
   worldGroup = new THREE.Group();
   pigs = [];
   finishShown = false;
@@ -779,67 +799,124 @@ function updateOverlay(){
 }
 
 function animatePig(pig, elapsedSec){
-  const data=pig.userData;
-  const total=pigs.length||1;
-  const rankMap=new Map((state.race?.order||[]).map(x=>[x.nickname,x.place]));
-  const place=rankMap.get(data.name)||total;
+  const data = pig.userData;
+  const rig = data.rig;
+  const total = pigs.length || 1;
+  const rankMap = new Map((state.race?.order || []).map(x=>[x.nickname,x.place]));
+  const place = rankMap.get(data.name) || total;
 
-  let progress=0;
+  let progress = 0;
   if(state.race){
-    progress=Math.min(1,Math.max(0,(Date.now()-state.race.startedAt)/durationMs));
+    progress = Math.min(1,Math.max(0,(Date.now()-state.race.startedAt)/durationMs));
   }
 
-  const runSpeed=10.8;
-  const phase=elapsedSec*runSpeed+data.seed*3.1;
-  let x=data.startX;
-  let winnerDance=false;
+  const runSpeed = 12.5;
+  const phase = elapsedSec*runSpeed + data.seed*3.1;
+  let x = data.startX;
+  let winnerDance = false;
 
   if(state.race){
-    const finishBias=place===1?1.02:0.9-((place-2)/Math.max(1,total-1))*0.24;
-    const wobble=Math.sin(elapsedSec*3.8+data.seed*5)*(1-progress)*0.55;
-    const pct=progress<1?Math.max(0,Math.min(1,progress*finishBias+wobble*0.02)):(place===1?1.03:Math.max(0.82,0.98-place*0.0026));
-    x=THREE.MathUtils.lerp(data.startX,data.finishX,pct);
-    if(progress>=1&&place===1){winnerDance=true;x=data.finishX+0.8;}
+    const finishBias = place===1 ? 1.02 : 0.9-((place-2)/Math.max(1,total-1))*0.24;
+    const wobble = Math.sin(elapsedSec*3.8+data.seed*5)*(1-progress)*0.55;
+    const pct = progress<1
+      ? Math.max(0,Math.min(1,progress*finishBias+wobble*0.02))
+      : (place===1 ? 1.03 : Math.max(0.82,0.98-place*0.0026));
+    x = THREE.MathUtils.lerp(data.startX,data.finishX,pct);
+    if(progress>=1 && place===1){
+      winnerDance = true;
+      x = data.finishX+0.8;
+    }
   }
 
-  pig.position.x=x;
-  pig.position.z=data.laneZ;
+  pig.position.x = x;
+  pig.position.z = data.laneZ;
 
   if(winnerDance){
-    pig.position.y=data.baseY+Math.abs(Math.sin(elapsedSec*6.5))*0.18;
-    pig.rotation.y=Math.sin(elapsedSec*6)*0.45;
-    pig.rotation.z=Math.sin(elapsedSec*9)*0.08;
-    data.leftArm.rotation.z=Math.sin(elapsedSec*10)*1.15+0.7;
-    data.rightArm.rotation.z=-Math.sin(elapsedSec*10)*1.15-0.7;
-    data.leftLeg.rotation.z=Math.sin(elapsedSec*8)*0.45;
-    data.rightLeg.rotation.z=-Math.sin(elapsedSec*8)*0.45;
-    data.body.rotation.z=Math.sin(elapsedSec*10)*0.06;
-    data.head.rotation.z=-Math.sin(elapsedSec*10)*0.05;
+    pig.position.y = data.baseY + Math.abs(Math.sin(elapsedSec*6.5))*0.22;
+    pig.rotation.y = Math.sin(elapsedSec*5)*0.45;
+    pig.rotation.z = Math.sin(elapsedSec*8)*0.05;
+
+    setBoneDelta(rig,'armL',_axisX,1.25+Math.sin(elapsedSec*8)*0.55);
+    setBoneDelta(rig,'armR',_axisX,-1.25-Math.sin(elapsedSec*8)*0.55);
+    setBoneDelta(rig,'forearmL',_axisX,-0.8);
+    setBoneDelta(rig,'forearmR',_axisX,-0.8);
+    setBoneDelta(rig,'thighL',_axisX,Math.sin(elapsedSec*7)*0.45);
+    setBoneDelta(rig,'thighR',_axisX,-Math.sin(elapsedSec*7)*0.45);
+    setBoneDelta(rig,'spine',_axisZ,Math.sin(elapsedSec*6)*0.10);
+    setBoneDelta(rig,'head',_axisZ,-Math.sin(elapsedSec*6)*0.08);
   }else{
-    const moving=state.race?1:0.18;
-    const stride=Math.sin(phase);
-    const bounce=Math.abs(Math.sin(phase*2));
+    const moving = state.race ? 1 : 0.22;
+    const stride = Math.sin(phase);
+    const stride2 = Math.sin(phase+Math.PI);
 
-    pig.position.y=data.baseY+bounce*0.025*moving;
-    pig.rotation.y=0;
-    pig.rotation.z=-0.11;
+    pig.position.y = data.baseY + Math.max(0,Math.sin(phase*2))*0.035*moving;
+    pig.rotation.y = 0;
+    pig.rotation.z = -0.025;
 
-    data.leftLeg.rotation.z=stride*0.95*moving;
-    data.rightLeg.rotation.z=-stride*0.95*moving;
-    data.leftArm.rotation.z=-stride*0.9*moving-0.25;
-    data.rightArm.rotation.z=stride*0.9*moving+0.25;
+    // 사람 달리기처럼 반대쪽 팔/다리를 교차시킴
+    setBoneDelta(rig,'thighL',_axisX,stride*0.82*moving);
+    setBoneDelta(rig,'thighR',_axisX,stride2*0.82*moving);
+    setBoneDelta(rig,'legL',_axisX,-Math.max(0,-stride)*0.95*moving);
+    setBoneDelta(rig,'legR',_axisX,-Math.max(0,-stride2)*0.95*moving);
+    setBoneDelta(rig,'footL',_axisX,Math.max(0,stride)*0.28*moving);
+    setBoneDelta(rig,'footR',_axisX,Math.max(0,stride2)*0.28*moving);
 
-    data.leftLeg.rotation.x=0.08*Math.cos(phase)*moving;
-    data.rightLeg.rotation.x=-0.08*Math.cos(phase)*moving;
-    data.leftArm.rotation.x=-0.06*Math.cos(phase)*moving;
-    data.rightArm.rotation.x=0.06*Math.cos(phase)*moving;
+    setBoneDelta(rig,'armL',_axisX,-stride*0.88*moving);
+    setBoneDelta(rig,'armR',_axisX,-stride2*0.88*moving);
+    setBoneDelta(rig,'forearmL',_axisX,-0.62-Math.max(0,stride)*0.18*moving);
+    setBoneDelta(rig,'forearmR',_axisX,-0.62-Math.max(0,stride2)*0.18*moving);
 
-    data.body.rotation.z=-0.11+Math.sin(phase*2)*0.018*moving;
-    data.head.rotation.z=0.08+Math.sin(phase*1.5)*0.025*moving;
-    data.head.rotation.x=-0.08;
+    setBoneDelta(rig,'spine',_axisZ,-0.10*moving+Math.sin(phase*2)*0.018*moving);
+    setBoneDelta(rig,'neck',_axisZ,0.04*moving);
+    setBoneDelta(rig,'head',_axisZ,0.05*moving);
   }
+}
 
-  data.tail.rotation.x=elapsedSec*7+data.seed;
+function updateNameLabels(){
+  if(!camera || !renderer) return;
+  const wrap = $('sceneWrap');
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  const order = state.race?.order || [];
+  const placeMap = new Map(order.map(x=>[x.nickname,x.place]));
+
+  for(const pig of pigs){
+    const d = pig.userData;
+    const el = d.labelEl;
+    if(!el) continue;
+
+    pig.getWorldPosition(_tmpV);
+    _tmpV.y += Math.max(1.0,d.displayHeight+0.25);
+    _tmpV.project(camera);
+
+    const onScreen =
+      _tmpV.z>-1 && _tmpV.z<1 &&
+      _tmpV.x>-1.08 && _tmpV.x<1.08 &&
+      _tmpV.y>-1.10 && _tmpV.y<1.10;
+
+    if(!onScreen){
+      el.style.display = 'none';
+      continue;
+    }
+
+    const x = (_tmpV.x*0.5+0.5)*w;
+    const y = (-_tmpV.y*0.5+0.5)*h;
+    el.style.display = 'block';
+    el.style.transform = `translate(-50%,-100%) translate(${x}px,${y}px)`;
+
+    const place = placeMap.get(d.name);
+    el.className = 'pigNameTag' +
+      (place && place<=10 ? ' top10' : '') +
+      (d.name===selectedPigName ? ' mine' : '');
+
+    if(d.name===selectedPigName){
+      el.textContent = `⭐ ${place ? place+'등 · ' : ''}${d.name}`;
+    }else if(place && place<=10){
+      el.textContent = `${place}등 · ${d.name}`;
+    }else{
+      el.textContent = d.name;
+    }
+  }
 }
 
 function updateAllCamera(){
@@ -863,6 +940,7 @@ function animate(){
   updateAllCamera();
   updateMyPigBadge();
   renderTop10();
+  updateNameLabels();
   renderer.render(scene, camera);
 }
 
@@ -973,6 +1051,7 @@ window.findMyPig = findMyPig;
 window.showAllPigs = showAllPigs;
 
 initScene();
+loadPigModel();
 if(selectedPigName) $('myPigName').value = selectedPigName;
 poll();
 setInterval(poll, 1500);
