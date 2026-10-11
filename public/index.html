@@ -6,347 +6,1338 @@
 <title>갤벤 레이스</title>
 <style>
 *{box-sizing:border-box}
-:root{--ink:#202431;--paper:#fffdf9;--line:#e7ebf0}
+:root{--ink:#202431}
 body{
-  margin:0;font-family:Arial,"Noto Sans KR",sans-serif;color:var(--ink);
+  margin:0;
+  font-family:Arial,"Noto Sans KR",sans-serif;
+  color:var(--ink);
   background:linear-gradient(#86d9ff 0 26%,#b9ecff 26% 34%,#72ba59 34% 100%);
 }
-.wrap{max-width:1600px;margin:auto;padding:14px}
-.title{text-align:center;font-size:38px;font-weight:1000;margin:2px 0 4px}
-.sub{text-align:center;font-size:14px;font-weight:800;color:#3c4960;margin-bottom:12px}
-.panel{background:#ffffffef;border:2px solid #fff;border-radius:22px;padding:14px;margin-bottom:12px;box-shadow:0 7px 22px #0002}
-.controls{display:grid;grid-template-columns:1fr 2fr repeat(4,auto);gap:8px;align-items:center}
-input,button{font:inherit;padding:10px 12px;border-radius:11px}
-input{border:2px solid #dde3eb;background:#fff}
-button{border:0;font-weight:900;cursor:pointer}
-.btn-load{background:#ffd55d}.btn-start{background:#ff9696}.btn-reset{background:#ddd}.btn-music{background:#bfe0ff}
-.status{text-align:center;margin-top:9px;font-weight:1000}
-.substatus{text-align:center;margin-top:4px;font-size:13px;color:#667182}
-.myPigControls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:9px}.myPigControls input{width:min(360px,100%)}
-.btn-my{background:#ffc8dc}.btn-all{background:#cce8ff}
+.wrap{
+  max-width:1600px;
+  margin:auto;
+  padding:14px;
+}
+.title{
+  text-align:center;
+  font-size:38px;
+  font-weight:1000;
+  margin:2px 0 4px;
+}
+.sub{
+  text-align:center;
+  font-size:14px;
+  font-weight:800;
+  color:#3c4960;
+  margin-bottom:12px;
+}
+.panel{
+  background:#ffffffef;
+  border:2px solid #fff;
+  border-radius:22px;
+  padding:14px;
+  margin-bottom:12px;
+  box-shadow:0 7px 22px #0002;
+}
+.viewerBar{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.viewerBar input{
+  width:min(360px,100%);
+  font:inherit;
+  padding:10px 12px;
+  border-radius:11px;
+  border:2px solid #dde3eb;
+}
+.viewerBar button{
+  font:inherit;
+  padding:10px 12px;
+  border:0;
+  border-radius:11px;
+  font-weight:900;
+  cursor:pointer;
+}
+.btn-my{background:#ffc8dc}
+.btn-all{background:#cce8ff}
+.status{
+  text-align:center;
+  margin-top:8px;
+  font-weight:1000;
+}
+.substatus{
+  text-align:center;
+  margin-top:4px;
+  font-size:13px;
+  color:#667182;
+}
 
-/* 경기장 + 우측 순위표 완전 분리 */
-.raceGrid{display:grid;grid-template-columns:minmax(0,1fr) 235px;gap:12px;align-items:stretch}
+.raceGrid{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 235px;
+  gap:12px;
+  align-items:stretch;
+}
 .raceShell{
-  position:relative;height:72vh;min-height:590px;overflow:hidden;border-radius:18px;
+  position:relative;
+  height:72vh;
+  min-height:590px;
+  overflow:hidden;
+  border-radius:18px;
   background:linear-gradient(#7bd4fb 0 25%,#e7f8ff 25% 34%,#67ad52 34% 42%,#c98851 42% 100%);
-  border:4px solid #fff;box-shadow:0 8px 22px #0002;
+  border:4px solid #fff;
+  box-shadow:0 8px 22px #0002;
 }
-.sideBar{display:flex;flex-direction:column;gap:10px}
+.sideBar{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
 .infoBox,.top10Box{
-  background:#ffffffee;border:2px solid #fff;border-radius:17px;box-shadow:0 6px 16px #0002;padding:12px
+  background:#ffffffee;
+  border:2px solid #fff;
+  border-radius:17px;
+  box-shadow:0 6px 16px #0002;
+  padding:12px;
 }
-.infoBox{text-align:center;font-weight:1000;line-height:1.55}
-.top10Box{flex:1;min-height:0}
-.top10Title{text-align:center;font-size:15px;font-weight:1000;margin-bottom:7px}
-.top10List{display:flex;flex-direction:column;gap:5px}
-.top10Row{display:grid;grid-template-columns:36px minmax(0,1fr);gap:7px;align-items:center;padding:7px 8px;background:#f5f6f8;border-radius:9px;font-size:12px;font-weight:1000}
-.top10Row span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.top10Row.me{background:#ffd7e8;outline:2px solid #ff7fb3}
+.infoBox{
+  text-align:center;
+  font-weight:1000;
+  line-height:1.55;
+}
+.top10Box{
+  flex:1;
+  min-height:0;
+}
+.top10Title{
+  text-align:center;
+  font-size:15px;
+  font-weight:1000;
+  margin-bottom:7px;
+}
+.top10List{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+}
+.top10Row{
+  display:grid;
+  grid-template-columns:36px minmax(0,1fr);
+  gap:7px;
+  align-items:center;
+  padding:7px 8px;
+  background:#f5f6f8;
+  border-radius:9px;
+  font-size:12px;
+  font-weight:1000;
+}
+.top10Row span:last-child{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.top10Row.me{
+  background:#ffd7e8;
+  outline:2px solid #ff7fb3;
+}
 
-/* 경기장 배경 */
-.cloud{position:absolute;background:#fff;border-radius:999px;opacity:.86}
-.c1{width:180px;height:52px;left:7%;top:8%}.c2{width:240px;height:62px;right:9%;top:13%}
-.hills{position:absolute;left:0;right:0;top:29%;height:15%;background:linear-gradient(160deg,#67a85a 0 20%,#86bf6c 20% 36%,#5c9b54 36% 55%,#78b465 55% 100%);clip-path:polygon(0 70%,13% 36%,24% 62%,39% 18%,53% 67%,69% 32%,83% 61%,100% 28%,100% 100%,0 100%)}
-.trackLines{position:absolute;inset:42% 0 0;background:repeating-linear-gradient(to bottom,transparent 0 9.75%,rgba(255,255,255,.23) 9.75% 10%)}
-.start{position:absolute;left:6%;top:42%;bottom:0;width:6px;background:#fff9}
-.finish{position:absolute;right:5%;top:42%;bottom:0;width:16px;background:repeating-linear-gradient(to bottom,#fff 0 12px,#111 12px 24px);box-shadow:0 0 0 4px #fff5}
-.finishLabel{position:absolute;left:14px;top:14px;background:#ffffffed;border-radius:12px;padding:9px 12px;font-size:20px;font-weight:1000;box-shadow:0 5px 12px #0002}
-.raceLayer{position:absolute;inset:42% 0 0;overflow:hidden}
+.cloud{
+  position:absolute;
+  background:#fff;
+  border-radius:999px;
+  opacity:.86;
+}
+.c1{
+  width:180px;
+  height:52px;
+  left:7%;
+  top:8%;
+}
+.c2{
+  width:240px;
+  height:62px;
+  right:9%;
+  top:13%;
+}
+.hills{
+  position:absolute;
+  left:0;
+  right:0;
+  top:29%;
+  height:15%;
+  background:linear-gradient(160deg,#67a85a 0 20%,#86bf6c 20% 36%,#5c9b54 36% 55%,#78b465 55% 100%);
+  clip-path:polygon(0 70%,13% 36%,24% 62%,39% 18%,53% 67%,69% 32%,83% 61%,100% 28%,100% 100%,0 100%);
+}
+.trackLines{
+  position:absolute;
+  inset:42% 0 0;
+  background:repeating-linear-gradient(
+    to bottom,
+    transparent 0 9.75%,
+    rgba(255,255,255,.23) 9.75% 10%
+  );
+}
+.start{
+  position:absolute;
+  left:6%;
+  top:42%;
+  bottom:0;
+  width:6px;
+  background:#fff9;
+}
+.finish{
+  position:absolute;
+  right:5%;
+  top:42%;
+  bottom:0;
+  width:16px;
+  background:repeating-linear-gradient(
+    to bottom,
+    #fff 0 12px,
+    #111 12px 24px
+  );
+  box-shadow:0 0 0 4px #fff5;
+}
+.finishLabel{
+  position:absolute;
+  left:14px;
+  top:14px;
+  background:#ffffffed;
+  border-radius:12px;
+  padding:9px 12px;
+  font-size:20px;
+  font-weight:1000;
+  box-shadow:0 5px 12px #0002;
+}
+.raceLayer{
+  position:absolute;
+  inset:42% 0 0;
+  overflow:hidden;
+}
 
-/* 흰 카드 완전 제거: 투명 PNG 캐릭터 + 이름만 */
-.racer{position:absolute;left:0;top:0;width:76px;height:58px;will-change:transform;transform-origin:50% 100%;pointer-events:none}
-.pigSprite{position:absolute;left:10px;bottom:0;width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(0,0,0,.25));animation:runBob .22s ease-in-out infinite alternate}
-.racer.me .pigSprite{filter:drop-shadow(0 0 5px #ff47a1) drop-shadow(0 0 10px #fff)}
+.racer{
+  position:absolute;
+  left:0;
+  top:0;
+  width:76px;
+  height:58px;
+  will-change:transform;
+  transform-origin:50% 100%;
+  pointer-events:none;
+  transition:transform .38s linear;
+}
+.pigSprite{
+  position:absolute;
+  left:10px;
+  bottom:0;
+  width:52px;
+  height:52px;
+  object-fit:contain;
+  filter:drop-shadow(0 3px 3px rgba(0,0,0,.25));
+  animation:runBob .22s ease-in-out infinite alternate;
+}
+.racer.me .pigSprite{
+  filter:
+    drop-shadow(0 0 5px #ff47a1)
+    drop-shadow(0 0 10px #fff);
+}
 .nameTag{
-  position:absolute;left:50%;bottom:48px;transform:translateX(-50%);max-width:122px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  padding:2px 5px;border-radius:5px;background:#ffffffe0;color:#1f2430;
-  font-size:9px;font-weight:1000;line-height:1.15;text-shadow:0 1px #fff
+  position:absolute;
+  left:50%;
+  bottom:48px;
+  transform:translateX(-50%);
+  max-width:122px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  padding:2px 5px;
+  border-radius:5px;
+  background:#ffffffe0;
+  color:#1f2430;
+  font-size:9px;
+  font-weight:1000;
+  line-height:1.15;
 }
-.placeTag{position:absolute;right:0;bottom:1px;background:#252936;color:#fff;border-radius:999px;padding:2px 5px;font-size:8px;font-weight:1000}
-.meTag{position:absolute;left:50%;bottom:60px;transform:translateX(-50%);background:#ffe2ef;border:1px solid #ff5aa1;border-radius:999px;padding:2px 5px;font-size:8px;font-weight:1000;display:none}
+.placeTag{
+  position:absolute;
+  right:0;
+  bottom:1px;
+  background:#252936;
+  color:#fff;
+  border-radius:999px;
+  padding:2px 5px;
+  font-size:8px;
+  font-weight:1000;
+}
+.meTag{
+  position:absolute;
+  left:50%;
+  bottom:60px;
+  transform:translateX(-50%);
+  background:#ffe2ef;
+  border:1px solid #ff5aa1;
+  border-radius:999px;
+  padding:2px 5px;
+  font-size:8px;
+  font-weight:1000;
+  display:none;
+}
 .racer.me .meTag{display:block}
-@keyframes runBob{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(-3px) rotate(2deg)}}
-.racer.winner .pigSprite{animation:winnerDance .38s ease-in-out infinite alternate}
-@keyframes winnerDance{from{transform:translateY(0) rotate(-10deg) scale(1)}to{transform:translateY(-11px) rotate(10deg) scale(1.12)}}
 
-.timerBadge,.myPigBadge,.winnerBanner{position:absolute;z-index:20;box-shadow:0 5px 14px #0002}
-.timerBadge{left:14px;top:64px;background:#ffffffed;padding:8px 11px;border-radius:11px;font-size:18px;font-weight:1000}
-.myPigBadge{left:50%;top:14px;transform:translateX(-50%);background:#ffffffed;padding:8px 12px;border:2px solid #ff91bb;border-radius:12px;font-size:13px;font-weight:1000;display:none}
-.winnerBanner{left:50%;bottom:15px;transform:translateX(-50%);padding:13px 20px;border-radius:16px;background:#fff1a5;border:2px solid #ffe15a;font-size:25px;font-weight:1000;display:none}
+@keyframes runBob{
+  from{
+    transform:translateY(0) rotate(-2deg)
+  }
+  to{
+    transform:translateY(-3px) rotate(2deg)
+  }
+}
+.racer.winner .pigSprite{
+  animation:winnerDance .38s ease-in-out infinite alternate;
+}
+@keyframes winnerDance{
+  from{
+    transform:translateY(0) rotate(-10deg) scale(1)
+  }
+  to{
+    transform:translateY(-11px) rotate(10deg) scale(1.12)
+  }
+}
 
-.lower{display:grid;grid-template-columns:1.1fr .9fr;gap:12px;margin-top:12px}
-.listBox{max-height:310px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:7px;margin-top:9px}
-.person{background:#f4f6f8;border-radius:9px;padding:7px 9px;font-size:12px;font-weight:800}
-.ranking{max-height:310px;overflow:auto;margin-top:9px}
-.rankRow{display:flex;justify-content:space-between;padding:7px 9px;border-radius:8px;background:#f7f7f8;margin-bottom:5px;font-size:12px;font-weight:900}
-.rankRow.top1{background:#fff0a8}
-.note{font-size:12px;color:#687282;line-height:1.55;margin-top:9px}
+.timerBadge,
+.myPigBadge,
+.winnerBanner,
+.waitingOverlay{
+  position:absolute;
+  z-index:20;
+  box-shadow:0 5px 14px #0002;
+}
+.timerBadge{
+  left:14px;
+  top:64px;
+  background:#ffffffed;
+  padding:8px 11px;
+  border-radius:11px;
+  font-size:18px;
+  font-weight:1000;
+}
+.myPigBadge{
+  left:50%;
+  top:14px;
+  transform:translateX(-50%);
+  background:#ffffffed;
+  padding:8px 12px;
+  border:2px solid #ff91bb;
+  border-radius:12px;
+  font-size:13px;
+  font-weight:1000;
+  display:none;
+}
+.winnerBanner{
+  left:50%;
+  bottom:15px;
+  transform:translateX(-50%);
+  padding:13px 20px;
+  border-radius:16px;
+  background:#fff1a5;
+  border:2px solid #ffe15a;
+  font-size:25px;
+  font-weight:1000;
+  display:none;
+}
+.waitingOverlay{
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  background:#ffffffee;
+  border-radius:22px;
+  padding:20px 28px;
+  text-align:center;
+  font-weight:1000;
+  font-size:28px;
+  min-width:290px;
+}
+.waitingOverlay small{
+  display:block;
+  margin-top:8px;
+  font-size:13px;
+  color:#657084;
+}
+
+.lower{
+  display:grid;
+  grid-template-columns:1.1fr .9fr;
+  gap:12px;
+  margin-top:12px;
+}
+.listBox{
+  max-height:310px;
+  overflow:auto;
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(175px,1fr));
+  gap:7px;
+  margin-top:9px;
+}
+.person{
+  background:#f4f6f8;
+  border-radius:9px;
+  padding:7px 9px;
+  font-size:12px;
+  font-weight:800;
+}
+.ranking{
+  max-height:310px;
+  overflow:auto;
+  margin-top:9px;
+}
+.rankRow{
+  display:flex;
+  justify-content:space-between;
+  padding:7px 9px;
+  border-radius:8px;
+  background:#f7f7f8;
+  margin-bottom:5px;
+  font-size:12px;
+  font-weight:900;
+}
+.rankRow.top1{
+  background:#fff0a8;
+}
 
 @media(max-width:1100px){
-  .controls{grid-template-columns:1fr 1fr}
-  .raceGrid{grid-template-columns:1fr}
-  .sideBar{display:grid;grid-template-columns:180px 1fr}
-  .raceShell{height:68vh}
+  .raceGrid{
+    grid-template-columns:1fr;
+  }
+  .sideBar{
+    display:grid;
+    grid-template-columns:180px 1fr;
+  }
+  .raceShell{
+    height:68vh;
+  }
 }
 @media(max-width:700px){
-  .controls{grid-template-columns:1fr}
-  .title{font-size:30px}
-  .raceShell{min-height:520px}
-  .sideBar{grid-template-columns:1fr}
-  .lower{grid-template-columns:1fr}
+  .title{
+    font-size:30px;
+  }
+  .raceShell{
+    min-height:520px;
+  }
+  .sideBar{
+    grid-template-columns:1fr;
+  }
+  .lower{
+    grid-template-columns:1fr;
+  }
 }
 </style>
 </head>
+
 <body>
 <div class="wrap">
-  <div class="title">🏁 갤벤 레이스 🐷</div>
-  <div class="sub">디시 댓글 작성자가 자동 참가 · 2D 캐릭터 레이스</div>
+
+  <div class="title">
+    🏁 갤벤 레이스 🐷
+  </div>
+
+  <div class="sub">
+    공개 관전 페이지 · 시작 시간이 되면 자동으로 레이스가 시작됩니다
+  </div>
 
   <div class="panel">
-    <div class="controls">
-      <input id="key" type="password" placeholder="운영자 ADMIN_KEY">
-      <input id="post" placeholder="디시 갤벤 게시글 주소">
-      <button class="btn-load" onclick="loadComments()">🐷 댓글 불러오기</button>
-      <button class="btn-start" onclick="startRace()">🏁 레이스 시작</button>
-      <button class="btn-reset" onclick="resetRace()">초기화</button>
-      <button class="btn-music" id="musicBtn" onclick="toggleMusic()">🎵 음악 ON</button>
+    <div class="viewerBar">
+
+      <input
+        id="myPigName"
+        placeholder="내 닉네임 입력"
+      >
+
+      <button
+        class="btn-my"
+        onclick="findMyPig()"
+      >
+        🐷 내 돼지 보기
+      </button>
+
+      <button
+        class="btn-all"
+        onclick="showAllPigs()"
+      >
+        🏁 전체보기
+      </button>
+
     </div>
-    <div class="status" id="status">참가자 0 / 200명</div>
-    <div class="substatus" id="substatus">댓글을 불러오면 참가자가 자동 등록됩니다.</div>
-    <div class="myPigControls">
-      <input id="myPigName" placeholder="내 닉네임 입력">
-      <button class="btn-my" onclick="findMyPig()">🐷 내 돼지 보기</button>
-      <button class="btn-all" onclick="showAllPigs()">🏁 전체보기</button>
+
+    <div
+      class="status"
+      id="status"
+    >
+      참가자 0명
     </div>
+
+    <div
+      class="substatus"
+      id="substatus"
+    >
+      레이스 준비 중
+    </div>
+
   </div>
 
   <div class="raceGrid">
-    <div class="raceShell" id="raceShell">
-      <div class="cloud c1"></div><div class="cloud c2"></div><div class="hills"></div>
-      <div class="start"></div><div class="finish"></div><div class="trackLines"></div>
-      <div class="finishLabel">🏁 FINISH!</div>
-      <div class="raceLayer" id="raceLayer"></div>
-      <div class="timerBadge" id="timer">대기 중</div>
-      <div class="myPigBadge" id="myPigBadge"></div>
-      <div class="winnerBanner" id="winnerBanner"></div>
+
+    <div class="raceShell">
+
+      <div class="cloud c1"></div>
+      <div class="cloud c2"></div>
+
+      <div class="hills"></div>
+
+      <div class="start"></div>
+      <div class="finish"></div>
+      <div class="trackLines"></div>
+
+      <div class="finishLabel">
+        🏁 FINISH!
+      </div>
+
+      <div
+        class="raceLayer"
+        id="raceLayer"
+      ></div>
+
+      <div
+        class="timerBadge"
+        id="timer"
+      >
+        대기 중
+      </div>
+
+      <div
+        class="myPigBadge"
+        id="myPigBadge"
+      ></div>
+
+      <div
+        class="winnerBanner"
+        id="winnerBanner"
+      ></div>
+
+      <div
+        class="waitingOverlay"
+        id="waitingOverlay"
+      >
+        레이스 대기 중
+
+        <small>
+          운영자가 시작하면 자동으로 카운트다운됩니다.
+        </small>
+      </div>
+
     </div>
 
     <aside class="sideBar">
-      <div class="infoBox" id="sceneInfo">참가자 0명<br>30초 레이스</div>
-      <div class="top10Box">
-        <div class="top10Title">TOP 10</div>
-        <div class="top10List" id="top10List">레이스 대기중</div>
+
+      <div
+        class="infoBox"
+        id="sceneInfo"
+      >
+        참가자 0명<br>
+        30초 레이스
       </div>
+
+      <div class="top10Box">
+
+        <div class="top10Title">
+          LIVE TOP 10
+        </div>
+
+        <div
+          class="top10List"
+          id="top10List"
+        >
+          레이스 대기중
+        </div>
+
+      </div>
+
     </aside>
+
   </div>
 
   <div class="lower">
-    <div class="panel"><b>🐷 참가자 명단</b><div class="listBox" id="list"></div></div>
+
     <div class="panel">
-      <b>🏆 최종 순위</b><div class="ranking" id="ranking"></div>
-      <div class="note">화면에는 선두권을 최대 30명까지 보여주고, 내 돼지를 선택하면 항상 포함합니다. 1등은 골인 후 춤춥니다.</div>
+
+      <b>
+        🐷 참가자 명단
+      </b>
+
+      <div
+        class="listBox"
+        id="list"
+      ></div>
+
     </div>
+
+    <div class="panel">
+
+      <b>
+        🏆 최종 순위
+      </b>
+
+      <div
+        class="ranking"
+        id="ranking"
+      >
+        <div class="rankRow">
+
+          <span>
+            레이스 종료 후 공개
+          </span>
+
+          <span>
+            🏁
+          </span>
+
+        </div>
+      </div>
+
+    </div>
+
   </div>
+
 </div>
 
 <script>
-const $=id=>document.getElementById(id);
-const durationMs=30000;
-const bgm=new Audio('/race.mp3'); bgm.loop=true; bgm.volume=.55;
-let musicEnabled=true,state={racers:[],race:null},selectedPigName=localStorage.getItem('galvent_my_pig')||'',cameraMode=selectedPigName?'mine':'all';
-let finishShown=false,lastSig='',racerEls=new Map(),lastTopSig='';
+const $=
+  id=>
+    document.getElementById(id);
 
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function api(url,opt={}){const r=await fetch(url,opt);const d=await r.json().catch(()=>({error:'서버 응답 오류'}));if(!r.ok)throw Error(d.error||'오류가 발생했습니다.');return d}
-function setStatus(t){$('status').textContent=t} function setSub(t){$('substatus').textContent=t}
-function getPlace(name){return state.race?.order?.find(x=>x.nickname===name)?.place||null}
+let state={
+  racers:[],
+  race:null
+};
 
-function calcProgress(name,now){
-  if(!state.race)return 0;
+let live={
+  positions:[]
+};
 
-  const place=getPlace(name)||state.racers.length;
-  const p=Math.min(1,Math.max(0,(now-state.race.startedAt)/durationMs));
-  const t=(now-state.race.startedAt)/1000;
-  const seed=[...name].reduce((a,c)=>a+c.charCodeAt(0),0);
+let selectedPigName=
+  localStorage.getItem(
+    'galvent_my_pig'
+  )||'';
 
-  if(p>=1){
-    return place===1 ? 1.012 : Math.max(.955,.999-place*.0016);
-  }
+let cameraMode=
+  selectedPigName
+    ?'mine'
+    :'all';
 
-  // 기본 진행: 모두 거의 같은 속도
-  let pos = p * 0.965;
+let racerEls=
+  new Map();
 
-  // 0~94%: 계속 엎치락뒤치락
-  const chaos =
-    Math.sin(t*2.9 + seed*.37)*0.030 +
-    Math.sin(t*1.7 + seed*.19 + 1.3)*0.022 +
-    Math.sin(t*4.8 + seed*.083 + 0.6)*0.012;
+let lastSig='';
 
-  pos += chaos * (p < .94 ? 1 : Math.max(0,(1-p)/.06));
+let clockOffset=0;
 
-  // 1등은 96% 전까지 일부러 선두 고정되지 않게 살짝 눌러둠
-  if(place===1 && p<.96){
-    pos -= 0.020 + Math.sin(t*3.2+seed)*0.006;
-  }
-
-  // 2~4등은 막판 직전 잠깐 치고 나가게 해서 "가짜 선두" 생성
-  if(place>=2 && place<=4 && p>.84 && p<.975){
-    const hump = Math.sin(((p-.84)/.135)*Math.PI); // 중간에서 최고
-    pos += hump * (0.026 - (place-2)*0.004);
-  }
-
-  // 96%부터 최종 1등이 뒤에서 강하게 추월
-  if(place===1 && p>=.96){
-    const x=(p-.96)/.04;
-    pos += x*x * 0.070;
-  }
-
-  // 2등 이하도 결승 직전까지 거의 붙어 있게
-  if(place>1 && p>=.96){
-    const x=(p-.96)/.04;
-    const target=Math.max(.955,.999-place*.0016);
-    pos = pos*(1-x) + target*x;
-  }
-
-  // 진짜 마지막 1.2%에서만 최종 순위 완전히 고정
-  if(p>=.988){
-    const x=(p-.988)/.012;
-    const smooth=x*x*(3-2*x);
-    const target=place===1 ? 1.012 : Math.max(.955,.999-place*.0016);
-    pos = pos*(1-smooth)+target*smooth;
-  }
-
-  // 너무 일찍 결승선 통과 방지
-  if(p<.988) pos=Math.min(pos,.995);
-
-  return Math.max(0,Math.min(1.012,pos));
+function esc(s){
+  return String(s)
+    .replace(
+      /[&<>"']/g,
+      c=>({
+        '&':'&amp;',
+        '<':'&lt;',
+        '>':'&gt;',
+        '"':'&quot;',
+        "'":'&#39;'
+      }[c])
+    );
 }
-function liveOrder(now){
-  return state.racers.map(r=>({nickname:r.nickname,p:calcProgress(r.nickname,now),place:getPlace(r.nickname)||9999}))
-    .sort((a,b)=>b.p-a.p||a.place-b.place);
+
+async function getJSON(url){
+  const r=
+    await fetch(
+      url,
+      {
+        cache:'no-store'
+      }
+    );
+
+  if(!r.ok)
+    throw Error(
+      '서버 연결 실패'
+    );
+
+  return r.json();
 }
-/* 기존 10마리 → 최대 30마리 */
-function visibleNames(now){
-  if(!state.racers.length)return [];
-  const maxVisible=Math.min(30,state.racers.length);
-  let names=state.race?liveOrder(now).slice(0,maxVisible).map(x=>x.nickname):state.racers.slice(0,maxVisible).map(r=>r.nickname);
-  if(cameraMode==='mine'&&selectedPigName&&state.racers.some(r=>r.nickname===selectedPigName)&&!names.includes(selectedPigName)){
-    names[names.length-1]=selectedPigName;
-  }
-  return [...new Set(names)];
+
+function nowServer(){
+  return Date.now()+
+    clockOffset;
 }
-function buildRacers(now=Date.now()){
-  const names=visibleNames(now),sig=names.join('|')+'|'+cameraMode+'|'+selectedPigName;
-  if(sig===lastSig)return;
-  lastSig=sig;racerEls.clear();$('raceLayer').innerHTML='';
-  names.forEach(name=>{
-    const el=document.createElement('div');
-    el.className='racer'+(name===selectedPigName?' me':'');
-    el.dataset.name=name;
-    el.innerHTML=`<div class="meTag">⭐ 내 돼지</div><div class="nameTag">${esc(name)}</div><img class="pigSprite" src="/pig-runner-transparent.png" alt=""><div class="placeTag"></div>`;
-    $('raceLayer').appendChild(el);racerEls.set(name,el);
-  });
-}
-function renderFrame(){
-  const now=Date.now();buildRacers(now);
-  const names=[...racerEls.keys()],layer=$('raceLayer'),h=layer.clientHeight,w=layer.clientWidth;
-  const startX=Math.max(6,w*.04),finishX=w*.91;
-  const rows=Math.max(1,names.length);
-  const lane=Math.max(14,(h-58)/rows);
-  names.forEach((name,i)=>{
-    const el=racerEls.get(name),prog=calcProgress(name,now),x=startX+(finishX-startX)*prog;
-    const y=4+i*lane;
-    const scale=rows>26?.72:rows>20?.82:rows>14?.92:1;
-    el.style.transform=`translate(${x}px,${y}px) scale(${scale})`;
-    const pl=getPlace(name);el.querySelector('.placeTag').textContent=pl?`${pl}등`:'';
-    el.classList.toggle('winner',!!state.race&&now-state.race.startedAt>=durationMs&&pl===1);
-  });
-  updateOverlay(now);updateTop10(now);updateMyBadge();requestAnimationFrame(renderFrame);
-}
+
 function renderParticipants(){
-  $('list').innerHTML=state.racers.length?state.racers.map((r,i)=>`<div class="person">${i+1}. ${esc(r.nickname)}</div>`).join(''):'<div class="person">아직 참가자가 없습니다.</div>';
+
+  $('list').innerHTML=
+    state.racers.length
+      ?state.racers
+        .map(
+          (r,i)=>
+            `<div class="person">${i+1}. ${esc(r.nickname)}</div>`
+        )
+        .join('')
+      :'<div class="person">아직 참가자가 없습니다.</div>';
+
 }
+
+function liveMap(){
+  return new Map(
+    (live.positions||[])
+      .map(
+        x=>[
+          x.nickname,
+          x
+        ]
+      )
+  );
+}
+
+function visibleNames(){
+
+  if(!state.racers.length)
+    return[];
+
+  let names;
+
+  if(live.positions?.length){
+
+    names=
+      live.positions
+        .slice(
+          0,
+          Math.min(
+            30,
+            live.positions.length
+          )
+        )
+        .map(
+          x=>x.nickname
+        );
+
+  }else{
+
+    names=
+      state.racers
+        .slice(
+          0,
+          Math.min(
+            30,
+            state.racers.length
+          )
+        )
+        .map(
+          x=>x.nickname
+        );
+
+  }
+
+  if(
+    cameraMode==='mine'&&
+    selectedPigName&&
+    state.racers.some(
+      r=>
+        r.nickname===
+        selectedPigName
+    )&&
+    !names.includes(
+      selectedPigName
+    )
+  ){
+    names[
+      names.length-1
+    ]=
+      selectedPigName;
+  }
+
+  return[
+    ...new Set(names)
+  ];
+}
+
+function buildRacers(){
+
+  const names=
+    visibleNames();
+
+  const sig=
+    names.join('|')+
+    '|'+
+    cameraMode+
+    '|'+
+    selectedPigName;
+
+  if(sig===lastSig)
+    return;
+
+  lastSig=sig;
+
+  racerEls.clear();
+
+  $('raceLayer').innerHTML='';
+
+  names.forEach(
+    name=>{
+
+      const el=
+        document.createElement(
+          'div'
+        );
+
+      el.className=
+        'racer'+
+        (
+          name===selectedPigName
+            ?' me'
+            :''
+        );
+
+      el.innerHTML=
+        `
+        <div class="meTag">
+          ⭐ 내 돼지
+        </div>
+
+        <div class="nameTag">
+          ${esc(name)}
+        </div>
+
+        <img
+          class="pigSprite"
+          src="/pig-runner-transparent.png"
+          alt=""
+        >
+
+        <div class="placeTag"></div>
+        `;
+
+      $('raceLayer')
+        .appendChild(el);
+
+      racerEls.set(
+        name,
+        el
+      );
+
+    }
+  );
+
+}
+
+function renderRacers(){
+
+  buildRacers();
+
+  const lm=
+    liveMap();
+
+  const names=[
+    ...racerEls.keys()
+  ];
+
+  const layer=
+    $('raceLayer');
+
+  const h=
+    layer.clientHeight;
+
+  const w=
+    layer.clientWidth;
+
+  const startX=
+    Math.max(
+      6,
+      w*.04
+    );
+
+  const finishX=
+    w*.91;
+
+  const rows=
+    Math.max(
+      1,
+      names.length
+    );
+
+  const lane=
+    Math.max(
+      14,
+      (h-58)/rows
+    );
+
+  names.forEach(
+    (name,i)=>{
+
+      const el=
+        racerEls.get(name);
+
+      const d=
+        lm.get(name);
+
+      const prog=
+        d?.progress||
+        0;
+
+      const x=
+        startX+
+        (
+          finishX-
+          startX
+        )*
+        prog;
+
+      const y=
+        4+
+        i*
+        lane;
+
+      const scale=
+        rows>26
+          ?.72
+          :rows>20
+            ?.82
+            :rows>14
+              ?.92
+              :1;
+
+      el.style.transform=
+        `translate(${x}px,${y}px) scale(${scale})`;
+
+      el.querySelector(
+        '.placeTag'
+      ).textContent=
+        d?.livePlace
+          ?`${d.livePlace}위`
+          :'';
+
+      el.classList.toggle(
+        'winner',
+        state.race?.phase==='finished'&&
+        state.race?.winner===name
+      );
+
+    }
+  );
+
+}
+
+function renderTop10(){
+
+  const rows=
+    (live.positions||[])
+      .slice(
+        0,
+        10
+      );
+
+  $('top10List').innerHTML=
+    rows.length
+      ?rows
+        .map(
+          (r,i)=>
+            `
+            <div class="top10Row ${r.nickname===selectedPigName?'me':''}">
+              <span>
+                ${i+1}위
+              </span>
+
+              <span>
+                ${esc(r.nickname)}
+              </span>
+            </div>
+            `
+        )
+        .join('')
+      :'레이스 대기중';
+
+}
+
 function renderRanking(){
-  if(!state.race?.order?.length||Date.now()-state.race.startedAt<durationMs){
-    $('ranking').innerHTML='<div class="rankRow"><span>레이스 종료 후 공개</span><span>🏁</span></div>';return;
+
+  if(
+    state.race?.phase!=='finished'||
+    !state.race?.order
+  ){
+
+    $('ranking').innerHTML=
+      `
+      <div class="rankRow">
+        <span>
+          레이스 종료 후 공개
+        </span>
+        <span>
+          🏁
+        </span>
+      </div>
+      `;
+
+    return;
   }
-  $('ranking').innerHTML=state.race.order.map((r,i)=>`<div class="rankRow ${i===0?'top1':''}"><span>${i+1}위. ${esc(r.nickname)}</span><span>${i===0?'🏆':''}</span></div>`).join('');
+
+  $('ranking').innerHTML=
+    state.race.order
+      .map(
+        (r,i)=>
+          `
+          <div class="rankRow ${i===0?'top1':''}">
+            <span>
+              ${i+1}위. ${esc(r.nickname)}
+            </span>
+
+            <span>
+              ${i===0?'🏆':''}
+            </span>
+          </div>
+          `
+      )
+      .join('');
+
 }
-function updateTop10(now){
-  const box=$('top10List');if(!state.race){box.textContent='레이스 대기중';return}
-  const ended=now-state.race.startedAt>=durationMs;
-  const rows=ended?state.race.order.slice(0,10).map((r,i)=>({nickname:r.nickname,label:`${i+1}위`})):liveOrder(now).slice(0,10).map((r,i)=>({nickname:r.nickname,label:`${i+1}위`}));
-  const sig=rows.map(x=>x.nickname).join('|')+'|'+ended;
-  if(sig!==lastTopSig){lastTopSig=sig;box.innerHTML=rows.map(r=>`<div class="top10Row ${r.nickname===selectedPigName?'me':''}"><span>${r.label}</span><span>${esc(r.nickname)}</span></div>`).join('')}
-}
-function updateOverlay(now){
-  if(!state.race){$('timer').textContent='대기 중';return}
-  const left=Math.max(0,durationMs-(now-state.race.startedAt));
-  $('timer').textContent=left>0?`⏱ ${(left/1000).toFixed(1)}초`:'🏁 FINISH!';
-  if(left<=0&&state.race.winner&&!finishShown){
-    finishShown=true;$('winnerBanner').style.display='block';$('winnerBanner').textContent=`🏆 1등 ${state.race.winner} 🐷`;renderRanking();
+
+function updateClock(){
+
+  const r=
+    state.race;
+
+  const now=
+    nowServer();
+
+  $('status').textContent=
+    `참가자 ${state.racers.length}명`;
+
+  $('sceneInfo').innerHTML=
+    `참가자 ${state.racers.length}명<br>30초 레이스`;
+
+  if(!r){
+
+    $('timer').textContent=
+      '대기 중';
+
+    $('substatus').textContent=
+      '운영자가 레이스를 예약하면 자동으로 시작됩니다.';
+
+    $('waitingOverlay').style.display=
+      'block';
+
+    $('waitingOverlay').innerHTML=
+      `
+      레이스 대기 중
+      <small>
+        운영자가 시작하면 자동으로 카운트다운됩니다.
+      </small>
+      `;
+
+    return;
   }
+
+  if(
+    now<
+    r.startAt
+  ){
+
+    const left=
+      Math.max(
+        0,
+        r.startAt-now
+      );
+
+    $('timer').textContent=
+      `출발 ${(left/1000).toFixed(1)}초 전`;
+
+    $('substatus').textContent=
+      '레이스가 곧 시작됩니다. 이 페이지를 그대로 보고 계세요.';
+
+    $('waitingOverlay').style.display=
+      'block';
+
+    $('waitingOverlay').innerHTML=
+      `
+      ${Math.ceil(left/1000)}
+      <small>
+        초 뒤 자동 출발
+      </small>
+      `;
+
+  }else if(
+    now<
+    r.endAt
+  ){
+
+    const left=
+      Math.max(
+        0,
+        r.endAt-now
+      );
+
+    $('timer').textContent=
+      `⏱ ${(left/1000).toFixed(1)}초`;
+
+    $('substatus').textContent=
+      '레이스 진행 중!';
+
+    $('waitingOverlay').style.display=
+      'none';
+
+  }else{
+
+    $('timer').textContent=
+      '🏁 FINISH!';
+
+    $('substatus').textContent=
+      r.winner
+        ?`레이스 종료 · 1등 ${r.winner}`
+        :'레이스 종료';
+
+    $('waitingOverlay').style.display=
+      'none';
+
+    if(r.winner){
+
+      $('winnerBanner').style.display=
+        'block';
+
+      $('winnerBanner').textContent=
+        `🏆 1등 ${r.winner} 🐷`;
+
+    }
+
+  }
+
 }
-function updateMyBadge(){
-  const b=$('myPigBadge');
-  if(cameraMode!=='mine'||!selectedPigName||!state.racers.some(r=>r.nickname===selectedPigName)){b.style.display='none';return}
-  b.style.display='block';const pl=getPlace(selectedPigName);
-  b.textContent=state.race&&Date.now()-state.race.startedAt>=durationMs&&pl?`⭐ ${selectedPigName} · 최종 ${pl}등`:`⭐ ${selectedPigName} · 내 돼지`;
-}
+
 function findMyPig(){
-  const q=$('myPigName').value.trim();if(!q)return alert('내 닉네임을 입력하세요.');
-  const exact=state.racers.find(r=>r.nickname===q),parts=state.racers.filter(r=>r.nickname.toLowerCase().includes(q.toLowerCase()));
-  const target=exact||((parts.length===1)?parts[0]:null);
-  if(!target)return alert(parts.length>1?'비슷한 닉네임이 여러 개 있습니다. 정확하게 입력하세요.':'참가자 명단에서 닉네임을 찾지 못했습니다.');
-  selectedPigName=target.nickname;cameraMode='mine';localStorage.setItem('galvent_my_pig',selectedPigName);$('myPigName').value=selectedPigName;lastSig='';updateMyBadge();
-}
-function showAllPigs(){cameraMode='all';lastSig='';$('myPigBadge').style.display='none'}
 
-async function poll(){
-  try{
-    state=await api('/api/state');
-    setStatus(`참가자 ${state.racers.length} / 200명`);
-    $('sceneInfo').innerHTML=`참가자 ${state.racers.length}명<br>30초 레이스`;
-    renderParticipants();renderRanking();lastSig='';
-    if(!state.race)setSub('댓글을 불러온 뒤 레이스를 시작할 수 있습니다.');
-    else setSub(Date.now()-state.race.startedAt<durationMs?'레이스 진행 중...':`레이스 종료 · 1등 ${state.race.winner}`);
-  }catch(e){setSub('서버 연결을 확인하세요.')}
-}
-async function loadComments(){
-  const key=$('key').value.trim(),url=$('post').value.trim();
-  if(!key)return alert('ADMIN_KEY를 입력하세요.');if(!url)return alert('디시 게시글 주소를 입력하세요.');
-  setSub('댓글 참가자 불러오는 중...');
-  try{
-    const d=await api('/api/admin/import',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({url})});
-    await poll();alert(`댓글 ${d.commentCount??'-'}개 / 참가자 ${d.count}명 불러왔습니다.`);
-  }catch(e){alert(e.message);setSub(e.message)}
-}
-async function startRace(){
-  const key=$('key').value.trim();
-  if(!key)return alert('ADMIN_KEY를 입력하세요.');if(!state.racers.length)return alert('먼저 댓글을 불러오세요.');
-  if(!confirm(`${state.racers.length}명으로 30초 레이스를 시작할까요?`))return;
-  try{
-    await api('/api/admin/start',{method:'POST',headers:{'Authorization':'Bearer '+key}});
-    finishShown=false;$('winnerBanner').style.display='none';await poll();
-    if(musicEnabled){try{bgm.currentTime=0;await bgm.play()}catch(e){}}
-  }catch(e){alert(e.message)}
-}
-async function resetRace(){
-  const key=$('key').value.trim();
-  if(!key)return alert('ADMIN_KEY를 입력하세요.');if(!confirm('참가자와 레이스를 전부 초기화할까요?'))return;
-  try{
-    await api('/api/admin/reset',{method:'POST',headers:{'Authorization':'Bearer '+key}});
-    bgm.pause();bgm.currentTime=0;finishShown=false;state={racers:[],race:null};lastSig='';
-    $('winnerBanner').style.display='none';await poll();
-  }catch(e){alert(e.message)}
-}
-function toggleMusic(){musicEnabled=!musicEnabled;$('musicBtn').textContent=musicEnabled?'🎵 음악 ON':'🔇 음악 OFF';if(!musicEnabled)bgm.pause()}
+  const q=
+    $('myPigName')
+      .value
+      .trim();
 
-window.loadComments=loadComments;window.startRace=startRace;window.resetRace=resetRace;window.toggleMusic=toggleMusic;window.findMyPig=findMyPig;window.showAllPigs=showAllPigs;
-if(selectedPigName)$('myPigName').value=selectedPigName;
-poll();setInterval(poll,1800);requestAnimationFrame(renderFrame);
+  if(!q)
+    return alert(
+      '내 닉네임을 입력하세요.'
+    );
+
+  const exact=
+    state.racers
+      .find(
+        r=>
+          r.nickname===q
+      );
+
+  const parts=
+    state.racers
+      .filter(
+        r=>
+          r.nickname
+            .toLowerCase()
+            .includes(
+              q.toLowerCase()
+            )
+      );
+
+  const target=
+    exact||
+    (
+      parts.length===1
+        ?parts[0]
+        :null
+    );
+
+  if(!target){
+
+    return alert(
+      parts.length>1
+        ?'비슷한 닉네임이 여러 개 있습니다. 정확하게 입력하세요.'
+        :'참가자 명단에서 닉네임을 찾지 못했습니다.'
+    );
+
+  }
+
+  selectedPigName=
+    target.nickname;
+
+  cameraMode=
+    'mine';
+
+  localStorage.setItem(
+    'galvent_my_pig',
+    selectedPigName
+  );
+
+  $('myPigName').value=
+    selectedPigName;
+
+  lastSig='';
+
+  updateMyBadge();
+
+}
+
+function showAllPigs(){
+
+  cameraMode=
+    'all';
+
+  lastSig='';
+
+  $('myPigBadge').style.display=
+    'none';
+
+}
+
+function updateMyBadge(){
+
+  const b=
+    $('myPigBadge');
+
+  if(
+    cameraMode!=='mine'||
+    !selectedPigName||
+    !state.racers.some(
+      r=>
+        r.nickname===
+        selectedPigName
+    )
+  ){
+
+    b.style.display=
+      'none';
+
+    return;
+  }
+
+  const d=
+    liveMap()
+      .get(
+        selectedPigName
+      );
+
+  b.style.display=
+    'block';
+
+  b.textContent=
+    d?.livePlace
+      ?`⭐ ${selectedPigName} · 현재 ${d.livePlace}위`
+      :`⭐ ${selectedPigName} · 내 돼지`;
+
+}
+
+async function refreshState(){
+
+  try{
+
+    const d=
+      await getJSON(
+        '/api/state'
+      );
+
+    state=d;
+
+    clockOffset=
+      (
+        d.serverNow||
+        Date.now()
+      )-
+      Date.now();
+
+    renderParticipants();
+
+    renderRanking();
+
+    lastSig='';
+
+  }catch(e){
+
+  }
+
+}
+
+async function refreshLive(){
+
+  try{
+
+    const d=
+      await getJSON(
+        '/api/live'
+      );
+
+    live=d;
+
+    clockOffset=
+      (
+        d.serverNow||
+        Date.now()
+      )-
+      Date.now();
+
+    lastSig='';
+
+    renderTop10();
+
+    renderRacers();
+
+    updateMyBadge();
+
+    if(
+      d.phase==='finished'
+    ){
+      refreshState();
+    }
+
+  }catch(e){
+
+  }
+
+}
+
+if(selectedPigName){
+
+  $('myPigName').value=
+    selectedPigName;
+
+}
+
+window.findMyPig=
+  findMyPig;
+
+window.showAllPigs=
+  showAllPigs;
+
+refreshState();
+
+refreshLive();
+
+setInterval(
+  refreshState,
+  1500
+);
+
+setInterval(
+  refreshLive,
+  450
+);
+
+setInterval(
+  ()=>{
+    updateClock();
+    renderRacers();
+    updateMyBadge();
+  },
+  100
+);
 </script>
+
 </body>
 </html>
