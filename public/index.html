@@ -6,80 +6,103 @@
 <title>갤벤 레이스</title>
 <style>
 *{box-sizing:border-box}
-:root{--pink:#ff84ad;--ink:#232633;--paper:#fffefb}
+:root{--ink:#202431;--paper:#fffdf9;--line:#e7ebf0}
 body{
   margin:0;font-family:Arial,"Noto Sans KR",sans-serif;color:var(--ink);
-  background:linear-gradient(#86d9ff 0 28%,#b9ecff 28% 36%,#74bd59 36% 100%);
+  background:linear-gradient(#86d9ff 0 26%,#b9ecff 26% 34%,#72ba59 34% 100%);
 }
-.wrap{max-width:1400px;margin:auto;padding:18px}
-.title{text-align:center;font-weight:1000;font-size:40px;margin:4px 0 6px}
-.sub{text-align:center;margin-bottom:14px;font-weight:700;color:#34435a}
-.panel{background:#fffffff0;border:2px solid #fff;border-radius:22px;padding:15px;margin-bottom:14px;box-shadow:0 8px 25px #0002}
+.wrap{max-width:1600px;margin:auto;padding:14px}
+.title{text-align:center;font-size:38px;font-weight:1000;margin:2px 0 4px}
+.sub{text-align:center;font-size:14px;font-weight:800;color:#3c4960;margin-bottom:12px}
+.panel{background:#ffffffef;border:2px solid #fff;border-radius:22px;padding:14px;margin-bottom:12px;box-shadow:0 7px 22px #0002}
 .controls{display:grid;grid-template-columns:1fr 2fr repeat(4,auto);gap:8px;align-items:center}
-input,button{font:inherit;padding:11px 13px;border-radius:12px}
-input{border:2px solid #d9e1eb;background:#fff}
+input,button{font:inherit;padding:10px 12px;border-radius:11px}
+input{border:2px solid #dde3eb;background:#fff}
 button{border:0;font-weight:900;cursor:pointer}
 .btn-load{background:#ffd55d}.btn-start{background:#ff9696}.btn-reset{background:#ddd}.btn-music{background:#bfe0ff}
-.status{text-align:center;margin-top:10px;font-weight:1000}.substatus{text-align:center;margin-top:5px;font-size:13px;color:#657084}
-.myPigControls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:10px}.myPigControls input{width:min(360px,100%)}
+.status{text-align:center;margin-top:9px;font-weight:1000}
+.substatus{text-align:center;margin-top:4px;font-size:13px;color:#667182}
+.myPigControls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:9px}.myPigControls input{width:min(360px,100%)}
 .btn-my{background:#ffc8dc}.btn-all{background:#cce8ff}
 
-.raceShell{position:relative;height:70vh;min-height:560px;overflow:hidden;border-radius:20px;background:
-  linear-gradient(#80d8ff 0 25%,#e9f9ff 25% 34%,#65ae4f 34% 43%,#c78650 43% 100%)}
-.cloud{position:absolute;background:#fff;border-radius:999px;opacity:.9;filter:blur(.3px)}
-.c1{width:190px;height:55px;left:8%;top:8%}.c2{width:250px;height:65px;right:8%;top:13%}
-.hills{position:absolute;left:0;right:0;top:28%;height:17%;background:linear-gradient(160deg,#66a958 0 18%,#86c26d 18% 34%,#5b9c53 34% 54%,#78b964 54% 100%);clip-path:polygon(0 65%,12% 35%,23% 63%,38% 22%,52% 67%,69% 30%,83% 60%,100% 25%,100% 100%,0 100%)}
-.trackLines{position:absolute;inset:43% 0 0;background:repeating-linear-gradient(to bottom,transparent 0 9.8%,rgba(255,255,255,.28) 9.8% 10%)}
-.finish{position:absolute;right:6%;top:43%;bottom:0;width:18px;background:repeating-linear-gradient(to bottom,#fff 0 14px,#111 14px 28px);box-shadow:0 0 0 4px #fff5}
-.start{position:absolute;left:8%;top:43%;bottom:0;width:6px;background:#fff9}
-.raceLayer{position:absolute;inset:43% 0 0;overflow:hidden}
+/* 경기장 + 우측 순위표 완전 분리 */
+.raceGrid{display:grid;grid-template-columns:minmax(0,1fr) 235px;gap:12px;align-items:stretch}
+.raceShell{
+  position:relative;height:72vh;min-height:590px;overflow:hidden;border-radius:18px;
+  background:linear-gradient(#7bd4fb 0 25%,#e7f8ff 25% 34%,#67ad52 34% 42%,#c98851 42% 100%);
+  border:4px solid #fff;box-shadow:0 8px 22px #0002;
+}
+.sideBar{display:flex;flex-direction:column;gap:10px}
+.infoBox,.top10Box{
+  background:#ffffffee;border:2px solid #fff;border-radius:17px;box-shadow:0 6px 16px #0002;padding:12px
+}
+.infoBox{text-align:center;font-weight:1000;line-height:1.55}
+.top10Box{flex:1;min-height:0}
+.top10Title{text-align:center;font-size:15px;font-weight:1000;margin-bottom:7px}
+.top10List{display:flex;flex-direction:column;gap:5px}
+.top10Row{display:grid;grid-template-columns:36px minmax(0,1fr);gap:7px;align-items:center;padding:7px 8px;background:#f5f6f8;border-radius:9px;font-size:12px;font-weight:1000}
+.top10Row span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top10Row.me{background:#ffd7e8;outline:2px solid #ff7fb3}
 
-.racer{
-  position:absolute;left:0;top:0;width:112px;height:110px;will-change:transform;
-  transform-origin:50% 100%;transition:filter .2s;
-}
-.racer.me{filter:drop-shadow(0 0 10px #ff4fa4) drop-shadow(0 0 18px #fff)}
-.pigCard{
-  position:absolute;left:14px;bottom:3px;width:78px;height:84px;border-radius:18px;overflow:hidden;
-  border:3px solid #fff;background:#fff;box-shadow:0 6px 12px #0003;
-  animation:runBob .24s ease-in-out infinite alternate;
-}
-.pigCard img{width:100%;height:100%;object-fit:cover;object-position:center 45%;display:block}
-.racer.me .pigCard{border-color:#ff63a4}
+/* 경기장 배경 */
+.cloud{position:absolute;background:#fff;border-radius:999px;opacity:.86}
+.c1{width:180px;height:52px;left:7%;top:8%}.c2{width:240px;height:62px;right:9%;top:13%}
+.hills{position:absolute;left:0;right:0;top:29%;height:15%;background:linear-gradient(160deg,#67a85a 0 20%,#86bf6c 20% 36%,#5c9b54 36% 55%,#78b465 55% 100%);clip-path:polygon(0 70%,13% 36%,24% 62%,39% 18%,53% 67%,69% 32%,83% 61%,100% 28%,100% 100%,0 100%)}
+.trackLines{position:absolute;inset:42% 0 0;background:repeating-linear-gradient(to bottom,transparent 0 9.75%,rgba(255,255,255,.23) 9.75% 10%)}
+.start{position:absolute;left:6%;top:42%;bottom:0;width:6px;background:#fff9}
+.finish{position:absolute;right:5%;top:42%;bottom:0;width:16px;background:repeating-linear-gradient(to bottom,#fff 0 12px,#111 12px 24px);box-shadow:0 0 0 4px #fff5}
+.finishLabel{position:absolute;left:14px;top:14px;background:#ffffffed;border-radius:12px;padding:9px 12px;font-size:20px;font-weight:1000;box-shadow:0 5px 12px #0002}
+.raceLayer{position:absolute;inset:42% 0 0;overflow:hidden}
+
+/* 흰 카드 완전 제거: 투명 PNG 캐릭터 + 이름만 */
+.racer{position:absolute;left:0;top:0;width:76px;height:58px;will-change:transform;transform-origin:50% 100%;pointer-events:none}
+.pigSprite{position:absolute;left:10px;bottom:0;width:52px;height:52px;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(0,0,0,.25));animation:runBob .22s ease-in-out infinite alternate}
+.racer.me .pigSprite{filter:drop-shadow(0 0 5px #ff47a1) drop-shadow(0 0 10px #fff)}
 .nameTag{
-  position:absolute;left:50%;bottom:88px;transform:translateX(-50%);
-  max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  padding:5px 8px;border-radius:9px;background:#fffffff0;border:1px solid #0001;
-  font-size:12px;font-weight:1000;box-shadow:0 3px 8px #0002
+  position:absolute;left:50%;bottom:48px;transform:translateX(-50%);max-width:122px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding:2px 5px;border-radius:5px;background:#ffffffe0;color:#1f2430;
+  font-size:9px;font-weight:1000;line-height:1.15;text-shadow:0 1px #fff
 }
-.placeTag{position:absolute;right:1px;bottom:8px;background:#252936;color:#fff;border-radius:999px;padding:4px 7px;font-size:11px;font-weight:1000}
-.meTag{position:absolute;left:50%;bottom:112px;transform:translateX(-50%);background:#ffecf5;border:2px solid #ff70aa;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:1000;display:none}
+.placeTag{position:absolute;right:0;bottom:1px;background:#252936;color:#fff;border-radius:999px;padding:2px 5px;font-size:8px;font-weight:1000}
+.meTag{position:absolute;left:50%;bottom:60px;transform:translateX(-50%);background:#ffe2ef;border:1px solid #ff5aa1;border-radius:999px;padding:2px 5px;font-size:8px;font-weight:1000;display:none}
 .racer.me .meTag{display:block}
-@keyframes runBob{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(-5px) rotate(2deg)}}
-.racer.winner .pigCard{animation:winnerDance .42s ease-in-out infinite alternate}
-@keyframes winnerDance{from{transform:translateY(0) rotate(-9deg) scale(1)}to{transform:translateY(-16px) rotate(9deg) scale(1.08)}}
+@keyframes runBob{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(-3px) rotate(2deg)}}
+.racer.winner .pigSprite{animation:winnerDance .38s ease-in-out infinite alternate}
+@keyframes winnerDance{from{transform:translateY(0) rotate(-10deg) scale(1)}to{transform:translateY(-11px) rotate(10deg) scale(1.12)}}
 
-.timerBadge,.sceneInfo,.myPigBadge,.top10Box,.winnerBanner{position:absolute;z-index:20;background:#ffffffea;box-shadow:0 5px 16px #0002}
-.timerBadge{left:14px;top:14px;padding:10px 14px;border-radius:14px;font-size:21px;font-weight:1000}
-.sceneInfo{right:14px;top:14px;padding:10px 14px;border-radius:14px;text-align:right;font-size:13px;font-weight:900;line-height:1.5}
-.myPigBadge{left:50%;top:14px;transform:translateX(-50%);padding:9px 14px;border:2px solid #ff91bb;border-radius:14px;font-weight:1000;display:none}
-.top10Box{right:14px;top:83px;width:190px;padding:9px;border-radius:14px;font-size:12px;font-weight:900}
-.top10Title{text-align:center;margin-bottom:5px}.top10Row{display:flex;justify-content:space-between;gap:7px;padding:3px 5px;background:#f6f7f9;border-radius:7px;margin-bottom:3px}.top10Row.me{background:#ffd6e6}
-.winnerBanner{left:50%;bottom:16px;transform:translateX(-50%);padding:14px 22px;border-radius:18px;background:#fff2a8;border:2px solid #ffe166;font-size:26px;font-weight:1000;display:none}
+.timerBadge,.myPigBadge,.winnerBanner{position:absolute;z-index:20;box-shadow:0 5px 14px #0002}
+.timerBadge{left:14px;top:64px;background:#ffffffed;padding:8px 11px;border-radius:11px;font-size:18px;font-weight:1000}
+.myPigBadge{left:50%;top:14px;transform:translateX(-50%);background:#ffffffed;padding:8px 12px;border:2px solid #ff91bb;border-radius:12px;font-size:13px;font-weight:1000;display:none}
+.winnerBanner{left:50%;bottom:15px;transform:translateX(-50%);padding:13px 20px;border-radius:16px;background:#fff1a5;border:2px solid #ffe15a;font-size:25px;font-weight:1000;display:none}
 
-.lower{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
-.listBox{max-height:330px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:10px}
-.person{background:#f4f6f8;border-radius:10px;padding:8px 10px;font-size:13px;font-weight:800}
-.ranking{max-height:330px;overflow:auto;margin-top:10px}.rankRow{display:flex;justify-content:space-between;padding:8px 10px;border-radius:9px;background:#f7f7f8;margin-bottom:6px;font-size:13px;font-weight:900}.rankRow.top1{background:#fff0a8}
-.note{font-size:13px;color:#687282;line-height:1.6;margin-top:10px}
-@media(max-width:1100px){.controls{grid-template-columns:1fr 1fr}.raceShell{height:65vh}.lower{grid-template-columns:1fr}}
-@media(max-width:700px){.controls{grid-template-columns:1fr}.title{font-size:30px}.raceShell{min-height:520px}.top10Box{width:155px}.winnerBanner{font-size:20px;width:calc(100% - 24px);text-align:center}.racer{width:92px}.pigCard{width:63px;height:72px}.nameTag{bottom:76px;font-size:10px}}
+.lower{display:grid;grid-template-columns:1.1fr .9fr;gap:12px;margin-top:12px}
+.listBox{max-height:310px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:7px;margin-top:9px}
+.person{background:#f4f6f8;border-radius:9px;padding:7px 9px;font-size:12px;font-weight:800}
+.ranking{max-height:310px;overflow:auto;margin-top:9px}
+.rankRow{display:flex;justify-content:space-between;padding:7px 9px;border-radius:8px;background:#f7f7f8;margin-bottom:5px;font-size:12px;font-weight:900}
+.rankRow.top1{background:#fff0a8}
+.note{font-size:12px;color:#687282;line-height:1.55;margin-top:9px}
+
+@media(max-width:1100px){
+  .controls{grid-template-columns:1fr 1fr}
+  .raceGrid{grid-template-columns:1fr}
+  .sideBar{display:grid;grid-template-columns:180px 1fr}
+  .raceShell{height:68vh}
+}
+@media(max-width:700px){
+  .controls{grid-template-columns:1fr}
+  .title{font-size:30px}
+  .raceShell{min-height:520px}
+  .sideBar{grid-template-columns:1fr}
+  .lower{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="title">🏁 갤벤 레이스 🐷</div>
-  <div class="sub">디시 댓글 작성자가 자동 참가 · 2D 돼지 캐릭터 레이스</div>
+  <div class="sub">디시 댓글 작성자가 자동 참가 · 2D 캐릭터 레이스</div>
 
   <div class="panel">
     <div class="controls">
@@ -99,25 +122,31 @@ button{border:0;font-weight:900;cursor:pointer}
     </div>
   </div>
 
-  <div class="panel">
+  <div class="raceGrid">
     <div class="raceShell" id="raceShell">
       <div class="cloud c1"></div><div class="cloud c2"></div><div class="hills"></div>
       <div class="start"></div><div class="finish"></div><div class="trackLines"></div>
+      <div class="finishLabel">🏁 FINISH!</div>
       <div class="raceLayer" id="raceLayer"></div>
-
       <div class="timerBadge" id="timer">대기 중</div>
       <div class="myPigBadge" id="myPigBadge"></div>
-      <div class="sceneInfo" id="sceneInfo">참가자 0명<br>30초 레이스</div>
-      <div class="top10Box"><div class="top10Title">TOP 10</div><div id="top10List">레이스 대기중</div></div>
       <div class="winnerBanner" id="winnerBanner"></div>
     </div>
+
+    <aside class="sideBar">
+      <div class="infoBox" id="sceneInfo">참가자 0명<br>30초 레이스</div>
+      <div class="top10Box">
+        <div class="top10Title">TOP 10</div>
+        <div class="top10List" id="top10List">레이스 대기중</div>
+      </div>
+    </aside>
   </div>
 
   <div class="lower">
     <div class="panel"><b>🐷 참가자 명단</b><div class="listBox" id="list"></div></div>
     <div class="panel">
       <b>🏆 최종 순위</b><div class="ranking" id="ranking"></div>
-      <div class="note">- 같은 사람은 1마리만 참가<br>- 최대 200명까지 참가<br>- 화면에는 선두권 + 내 돼지를 크게 보여줌<br>- 1등은 골인 후 춤춤<br>- 음악은 <b>public/race.mp3</b>가 있으면 재생됨</div>
+      <div class="note">화면에는 선두권을 최대 30명까지 보여주고, 내 돼지를 선택하면 항상 포함합니다. 1등은 골인 후 춤춥니다.</div>
     </div>
   </div>
 </div>
@@ -126,14 +155,14 @@ button{border:0;font-weight:900;cursor:pointer}
 const $=id=>document.getElementById(id);
 const durationMs=30000;
 const bgm=new Audio('/race.mp3'); bgm.loop=true; bgm.volume=.55;
-let musicEnabled=true, state={racers:[],race:null}, selectedPigName=localStorage.getItem('galvent_my_pig')||'', cameraMode=selectedPigName?'mine':'all';
-let finishShown=false,lastSig='', racerEls=new Map(), lastLiveTop=[];
+let musicEnabled=true,state={racers:[],race:null},selectedPigName=localStorage.getItem('galvent_my_pig')||'',cameraMode=selectedPigName?'mine':'all';
+let finishShown=false,lastSig='',racerEls=new Map(),lastTopSig='';
 
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function api(url,opt={}){const r=await fetch(url,opt);const d=await r.json().catch(()=>({error:'서버 응답 오류'}));if(!r.ok)throw Error(d.error||'오류가 발생했습니다.');return d}
 function setStatus(t){$('status').textContent=t} function setSub(t){$('substatus').textContent=t}
-
 function getPlace(name){return state.race?.order?.find(x=>x.nickname===name)?.place||null}
+
 function calcProgress(name,now){
   if(!state.race)return 0;
   const place=getPlace(name)||state.racers.length;
@@ -142,98 +171,130 @@ function calcProgress(name,now){
   if(p>=1)return place===1?1.01:Math.max(.80,.985-place*.0025);
   const bias=place===1?1.02:.90-((place-2)/Math.max(1,total-1))*.24;
   const seed=[...name].reduce((a,c)=>a+c.charCodeAt(0),0);
-  const wobble=Math.sin(now/630+seed*.17)*(1-p)*.018;
+  const wobble=Math.sin(now/640+seed*.17)*(1-p)*.018;
   return Math.max(0,Math.min(.995,p*bias+wobble));
 }
 function liveOrder(now){
   return state.racers.map(r=>({nickname:r.nickname,p:calcProgress(r.nickname,now),place:getPlace(r.nickname)||9999}))
     .sort((a,b)=>b.p-a.p||a.place-b.place);
 }
+/* 기존 10마리 → 최대 30마리 */
 function visibleNames(now){
   if(!state.racers.length)return [];
-  let names;
-  if(state.race)names=liveOrder(now).slice(0,10).map(x=>x.nickname);
-  else names=state.racers.slice(0,10).map(r=>r.nickname);
+  const maxVisible=Math.min(30,state.racers.length);
+  let names=state.race?liveOrder(now).slice(0,maxVisible).map(x=>x.nickname):state.racers.slice(0,maxVisible).map(r=>r.nickname);
   if(cameraMode==='mine'&&selectedPigName&&state.racers.some(r=>r.nickname===selectedPigName)&&!names.includes(selectedPigName)){
-    names[names.length?names.length-1:0]=selectedPigName;
+    names[names.length-1]=selectedPigName;
   }
   return [...new Set(names)];
 }
 function buildRacers(now=Date.now()){
-  const names=visibleNames(now), sig=names.join('|')+'|'+cameraMode+'|'+selectedPigName;
+  const names=visibleNames(now),sig=names.join('|')+'|'+cameraMode+'|'+selectedPigName;
   if(sig===lastSig)return;
-  lastSig=sig; racerEls.clear(); $('raceLayer').innerHTML='';
-  names.forEach((name,i)=>{
-    const el=document.createElement('div'); el.className='racer'+(name===selectedPigName?' me':''); el.dataset.name=name;
-    el.innerHTML=`<div class="meTag">⭐ 내 돼지</div><div class="nameTag">${esc(name)}</div><div class="pigCard"><img src="/pig-runner.png" alt=""></div><div class="placeTag"></div>`;
-    $('raceLayer').appendChild(el); racerEls.set(name,el);
+  lastSig=sig;racerEls.clear();$('raceLayer').innerHTML='';
+  names.forEach(name=>{
+    const el=document.createElement('div');
+    el.className='racer'+(name===selectedPigName?' me':'');
+    el.dataset.name=name;
+    el.innerHTML=`<div class="meTag">⭐ 내 돼지</div><div class="nameTag">${esc(name)}</div><img class="pigSprite" src="/pig-runner-transparent.png" alt=""><div class="placeTag"></div>`;
+    $('raceLayer').appendChild(el);racerEls.set(name,el);
   });
 }
 function renderFrame(){
-  const now=Date.now(); buildRacers(now);
-  const names=[...racerEls.keys()], h=$('raceLayer').clientHeight, laneH=Math.max(42,Math.min(66,h/Math.max(1,names.length)));
-  const shellW=$('raceLayer').clientWidth, startX=Math.max(4,shellW*.055), finishX=shellW*.88;
+  const now=Date.now();buildRacers(now);
+  const names=[...racerEls.keys()],layer=$('raceLayer'),h=layer.clientHeight,w=layer.clientWidth;
+  const startX=Math.max(6,w*.04),finishX=w*.91;
+  const rows=Math.max(1,names.length);
+  const lane=Math.max(14,(h-58)/rows);
   names.forEach((name,i)=>{
-    const el=racerEls.get(name), prog=calcProgress(name,now), x=startX+(finishX-startX)*prog, y=i*laneH+2;
-    const scale=Math.max(.62,1-i*.025);
+    const el=racerEls.get(name),prog=calcProgress(name,now),x=startX+(finishX-startX)*prog;
+    const y=4+i*lane;
+    const scale=rows>26?.72:rows>20?.82:rows>14?.92:1;
     el.style.transform=`translate(${x}px,${y}px) scale(${scale})`;
-    const pl=getPlace(name); el.querySelector('.placeTag').textContent=pl?`${pl}등`:'';
+    const pl=getPlace(name);el.querySelector('.placeTag').textContent=pl?`${pl}등`:'';
     el.classList.toggle('winner',!!state.race&&now-state.race.startedAt>=durationMs&&pl===1);
   });
-  updateOverlay(now); updateTop10(now); updateMyBadge(); requestAnimationFrame(renderFrame);
+  updateOverlay(now);updateTop10(now);updateMyBadge();requestAnimationFrame(renderFrame);
 }
-function renderParticipants(){$('list').innerHTML=state.racers.length?state.racers.map((r,i)=>`<div class="person">${i+1}. ${esc(r.nickname)}</div>`).join(''):'<div class="person">아직 참가자가 없습니다.</div>'}
+function renderParticipants(){
+  $('list').innerHTML=state.racers.length?state.racers.map((r,i)=>`<div class="person">${i+1}. ${esc(r.nickname)}</div>`).join(''):'<div class="person">아직 참가자가 없습니다.</div>';
+}
 function renderRanking(){
-  if(!state.race?.order?.length||Date.now()-state.race.startedAt<durationMs){$('ranking').innerHTML='<div class="rankRow"><span>레이스 종료 후 공개</span><span>🏁</span></div>';return}
-  $('ranking').innerHTML=state.race.order.map((r,i)=>`<div class="rankRow ${i===0?'top1':''}"><span>${i+1}위. ${esc(r.nickname)}</span><span>${i===0?'🏆':''}</span></div>`).join('')
+  if(!state.race?.order?.length||Date.now()-state.race.startedAt<durationMs){
+    $('ranking').innerHTML='<div class="rankRow"><span>레이스 종료 후 공개</span><span>🏁</span></div>';return;
+  }
+  $('ranking').innerHTML=state.race.order.map((r,i)=>`<div class="rankRow ${i===0?'top1':''}"><span>${i+1}위. ${esc(r.nickname)}</span><span>${i===0?'🏆':''}</span></div>`).join('');
 }
 function updateTop10(now){
-  const box=$('top10List');
-  if(!state.race){box.textContent='레이스 대기중';return}
-  const p=(now-state.race.startedAt)/durationMs;
-  const rows=p>=1?state.race.order.slice(0,10).map((r,i)=>({nickname:r.nickname,label:`${i+1}등`})):liveOrder(now).slice(0,10).map((r,i)=>({nickname:r.nickname,label:`${i+1}위`}));
-  const sig=rows.map(x=>x.nickname).join('|');
-  if(sig!==lastLiveTop.join('|')){lastLiveTop=rows.map(x=>x.nickname);box.innerHTML=rows.map(r=>`<div class="top10Row ${r.nickname===selectedPigName?'me':''}"><span>${r.label}</span><span>${esc(r.nickname)}</span></div>`).join('')}
+  const box=$('top10List');if(!state.race){box.textContent='레이스 대기중';return}
+  const ended=now-state.race.startedAt>=durationMs;
+  const rows=ended?state.race.order.slice(0,10).map((r,i)=>({nickname:r.nickname,label:`${i+1}위`})):liveOrder(now).slice(0,10).map((r,i)=>({nickname:r.nickname,label:`${i+1}위`}));
+  const sig=rows.map(x=>x.nickname).join('|')+'|'+ended;
+  if(sig!==lastTopSig){lastTopSig=sig;box.innerHTML=rows.map(r=>`<div class="top10Row ${r.nickname===selectedPigName?'me':''}"><span>${r.label}</span><span>${esc(r.nickname)}</span></div>`).join('')}
 }
 function updateOverlay(now){
   if(!state.race){$('timer').textContent='대기 중';return}
-  const left=Math.max(0,durationMs-(now-state.race.startedAt)); $('timer').textContent=left>0?`⏱ ${(left/1000).toFixed(1)}초`:'🏁 FINISH!';
-  if(left<=0&&state.race.winner&&!finishShown){finishShown=true;$('winnerBanner').style.display='block';$('winnerBanner').textContent=`🏆 1등 ${state.race.winner} 🐷`;renderRanking()}
+  const left=Math.max(0,durationMs-(now-state.race.startedAt));
+  $('timer').textContent=left>0?`⏱ ${(left/1000).toFixed(1)}초`:'🏁 FINISH!';
+  if(left<=0&&state.race.winner&&!finishShown){
+    finishShown=true;$('winnerBanner').style.display='block';$('winnerBanner').textContent=`🏆 1등 ${state.race.winner} 🐷`;renderRanking();
+  }
 }
 function updateMyBadge(){
-  const b=$('myPigBadge'); if(cameraMode!=='mine'||!selectedPigName){b.style.display='none';return}
-  if(!state.racers.some(r=>r.nickname===selectedPigName)){b.style.display='none';return}
-  b.style.display='block'; const pl=getPlace(selectedPigName); b.textContent=state.race&&Date.now()-state.race.startedAt>=durationMs&&pl?`⭐ ${selectedPigName} · 최종 ${pl}등`:`⭐ ${selectedPigName} · 내 돼지`;
+  const b=$('myPigBadge');
+  if(cameraMode!=='mine'||!selectedPigName||!state.racers.some(r=>r.nickname===selectedPigName)){b.style.display='none';return}
+  b.style.display='block';const pl=getPlace(selectedPigName);
+  b.textContent=state.race&&Date.now()-state.race.startedAt>=durationMs&&pl?`⭐ ${selectedPigName} · 최종 ${pl}등`:`⭐ ${selectedPigName} · 내 돼지`;
 }
 function findMyPig(){
-  const q=$('myPigName').value.trim(); if(!q)return alert('내 닉네임을 입력하세요.');
-  const exact=state.racers.find(r=>r.nickname===q), parts=state.racers.filter(r=>r.nickname.toLowerCase().includes(q.toLowerCase())); let target=exact||((parts.length===1)?parts[0]:null);
+  const q=$('myPigName').value.trim();if(!q)return alert('내 닉네임을 입력하세요.');
+  const exact=state.racers.find(r=>r.nickname===q),parts=state.racers.filter(r=>r.nickname.toLowerCase().includes(q.toLowerCase()));
+  const target=exact||((parts.length===1)?parts[0]:null);
   if(!target)return alert(parts.length>1?'비슷한 닉네임이 여러 개 있습니다. 정확하게 입력하세요.':'참가자 명단에서 닉네임을 찾지 못했습니다.');
-  selectedPigName=target.nickname; cameraMode='mine'; localStorage.setItem('galvent_my_pig',selectedPigName); $('myPigName').value=selectedPigName; lastSig=''; updateMyBadge()
+  selectedPigName=target.nickname;cameraMode='mine';localStorage.setItem('galvent_my_pig',selectedPigName);$('myPigName').value=selectedPigName;lastSig='';updateMyBadge();
 }
 function showAllPigs(){cameraMode='all';lastSig='';$('myPigBadge').style.display='none'}
 
 async function poll(){
   try{
-    state=await api('/api/state'); setStatus(`참가자 ${state.racers.length} / 200명`); $('sceneInfo').innerHTML=`참가자 ${state.racers.length}명<br>30초 레이스`; renderParticipants(); renderRanking(); lastSig='';
+    state=await api('/api/state');
+    setStatus(`참가자 ${state.racers.length} / 200명`);
+    $('sceneInfo').innerHTML=`참가자 ${state.racers.length}명<br>30초 레이스`;
+    renderParticipants();renderRanking();lastSig='';
     if(!state.race)setSub('댓글을 불러온 뒤 레이스를 시작할 수 있습니다.');
     else setSub(Date.now()-state.race.startedAt<durationMs?'레이스 진행 중...':`레이스 종료 · 1등 ${state.race.winner}`);
   }catch(e){setSub('서버 연결을 확인하세요.')}
 }
 async function loadComments(){
-  const key=$('key').value.trim(),url=$('post').value.trim(); if(!key)return alert('ADMIN_KEY를 입력하세요.'); if(!url)return alert('디시 게시글 주소를 입력하세요.');
+  const key=$('key').value.trim(),url=$('post').value.trim();
+  if(!key)return alert('ADMIN_KEY를 입력하세요.');if(!url)return alert('디시 게시글 주소를 입력하세요.');
   setSub('댓글 참가자 불러오는 중...');
-  try{const d=await api('/api/admin/import',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({url})});await poll();alert(`댓글 ${d.commentCount??'-'}개 / 참가자 ${d.count}명 불러왔습니다.`)}catch(e){alert(e.message);setSub(e.message)}
+  try{
+    const d=await api('/api/admin/import',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({url})});
+    await poll();alert(`댓글 ${d.commentCount??'-'}개 / 참가자 ${d.count}명 불러왔습니다.`);
+  }catch(e){alert(e.message);setSub(e.message)}
 }
 async function startRace(){
-  const key=$('key').value.trim(); if(!key)return alert('ADMIN_KEY를 입력하세요.'); if(!state.racers.length)return alert('먼저 댓글을 불러오세요.'); if(!confirm(`${state.racers.length}명으로 30초 레이스를 시작할까요?`))return;
-  try{await api('/api/admin/start',{method:'POST',headers:{'Authorization':'Bearer '+key}});finishShown=false;$('winnerBanner').style.display='none';await poll();if(musicEnabled){try{bgm.currentTime=0;await bgm.play()}catch(e){}}}catch(e){alert(e.message)}
+  const key=$('key').value.trim();
+  if(!key)return alert('ADMIN_KEY를 입력하세요.');if(!state.racers.length)return alert('먼저 댓글을 불러오세요.');
+  if(!confirm(`${state.racers.length}명으로 30초 레이스를 시작할까요?`))return;
+  try{
+    await api('/api/admin/start',{method:'POST',headers:{'Authorization':'Bearer '+key}});
+    finishShown=false;$('winnerBanner').style.display='none';await poll();
+    if(musicEnabled){try{bgm.currentTime=0;await bgm.play()}catch(e){}}
+  }catch(e){alert(e.message)}
 }
 async function resetRace(){
-  const key=$('key').value.trim(); if(!key)return alert('ADMIN_KEY를 입력하세요.'); if(!confirm('참가자와 레이스를 전부 초기화할까요?'))return;
-  try{await api('/api/admin/reset',{method:'POST',headers:{'Authorization':'Bearer '+key}});bgm.pause();bgm.currentTime=0;finishShown=false;state={racers:[],race:null};lastSig='';$('winnerBanner').style.display='none';await poll()}catch(e){alert(e.message)}
+  const key=$('key').value.trim();
+  if(!key)return alert('ADMIN_KEY를 입력하세요.');if(!confirm('참가자와 레이스를 전부 초기화할까요?'))return;
+  try{
+    await api('/api/admin/reset',{method:'POST',headers:{'Authorization':'Bearer '+key}});
+    bgm.pause();bgm.currentTime=0;finishShown=false;state={racers:[],race:null};lastSig='';
+    $('winnerBanner').style.display='none';await poll();
+  }catch(e){alert(e.message)}
 }
 function toggleMusic(){musicEnabled=!musicEnabled;$('musicBtn').textContent=musicEnabled?'🎵 음악 ON':'🔇 음악 OFF';if(!musicEnabled)bgm.pause()}
+
 window.loadComments=loadComments;window.startRace=startRace;window.resetRace=resetRace;window.toggleMusic=toggleMusic;window.findMyPig=findMyPig;window.showAllPigs=showAllPigs;
 if(selectedPigName)$('myPigName').value=selectedPigName;
 poll();setInterval(poll,1800);requestAnimationFrame(renderFrame);
