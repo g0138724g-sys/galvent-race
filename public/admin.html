@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>갤벤 레이스 관리자</title>
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#f3f6fa;
+  font-family:Arial,"Noto Sans KR",sans-serif;
+  color:#222;
+}
+.wrap{
+  max-width:900px;
+  margin:30px auto;
+  padding:16px;
+}
+.box{
+  background:#fff;
+  border-radius:18px;
+  padding:18px;
+  box-shadow:0 8px 25px #0001;
+  margin-bottom:14px;
+}
+h1{margin:0 0 14px}
+.grid{
+  display:grid;
+  grid-template-columns:1fr 2fr;
+  gap:9px;
+}
+input,button{
+  font:inherit;
+  padding:12px;
+  border-radius:11px;
+}
+input{border:2px solid #dce2e9}
+button{
+  border:0;
+  font-weight:900;
+  cursor:pointer;
+}
+.load{background:#ffd55d}
+.start{background:#ff9696}
+.reset{background:#ddd}
+.open{background:#cce8ff}
+.buttons{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:9px;
+  margin-top:10px;
+}
+.status{
+  margin-top:13px;
+  background:#f6f8fa;
+  border-radius:12px;
+  padding:12px;
+  font-weight:800;
+  line-height:1.6;
+}
+.countdown{
+  font-size:34px;
+  font-weight:1000;
+  text-align:center;
+  padding:18px;
+}
+.note{
+  font-size:13px;
+  color:#657084;
+  line-height:1.6;
+}
+@media(max-width:700px){
+  .grid,.buttons{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+
+  <div class="box">
+
+    <h1>🏁 갤벤 레이스 관리자</h1>
+
+    <div class="grid">
+      <input
+        id="key"
+        type="password"
+        placeholder="ADMIN_KEY"
+      >
+
+      <input
+        id="post"
+        placeholder="디시 갤벤 게시글 주소"
+      >
+    </div>
+
+    <div class="buttons">
+
+      <button
+        class="load"
+        onclick="loadComments()"
+      >
+        🐷 댓글 불러오기
+      </button>
+
+      <button
+        class="start"
+        onclick="startRace()"
+      >
+        🏁 30초 뒤 시작
+      </button>
+
+      <button
+        class="reset"
+        onclick="resetRace()"
+      >
+        초기화
+      </button>
+
+      <button
+        class="open"
+        onclick="window.open('/','_blank')"
+      >
+        👀 공개 화면 열기
+      </button>
+
+    </div>
+
+    <div
+      class="status"
+      id="status"
+    >
+      상태 확인 중...
+    </div>
+
+    <div
+      class="countdown"
+      id="countdown"
+    ></div>
+
+    <div class="note">
+      시작 버튼을 누르면 즉시 출발하지 않고
+      <b>30초 카운트다운</b> 후
+      모든 관전자 화면에서 동시에 출발합니다.
+      공개 링크는 메인 주소 그대로입니다.
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const $=
+  id=>
+    document.getElementById(id);
+
+let state={
+  racers:[],
+  race:null
+};
+
+let offset=0;
+
+async function api(
+  url,
+  opt={}
+){
+  const r=
+    await fetch(
+      url,
+      opt
+    );
+
+  const d=
+    await r
+      .json()
+      .catch(
+        ()=>({
+          error:'서버 응답 오류'
+        })
+      );
+
+  if(!r.ok)
+    throw Error(
+      d.error||
+      '오류가 발생했습니다.'
+    );
+
+  return d;
+}
+
+async function refresh(){
+
+  try{
+
+    state=
+      await api(
+        '/api/state'
+      );
+
+    offset=
+      (
+        state.serverNow||
+        Date.now()
+      )-
+      Date.now();
+
+    $('status').innerHTML=
+      `
+      참가자 <b>${state.racers.length}명</b><br>
+      ${
+        !state.race
+          ?'레이스 대기 중'
+          :state.race.phase==='countdown'
+            ?'출발 예약됨'
+            :state.race.phase==='running'
+              ?'레이스 진행 중'
+              :'레이스 종료'
+      }
+      `;
+
+  }catch(e){
+
+    $('status').textContent=
+      e.message;
+
+  }
+
+}
+
+function tick(){
+
+  if(!state.race){
+
+    $('countdown').textContent='';
+
+    return;
+  }
+
+  const now=
+    Date.now()+
+    offset;
+
+  if(
+    now<
+    state.race.startAt
+  ){
+
+    $('countdown').textContent=
+      `출발까지 ${
+        Math.max(
+          0,
+          Math.ceil(
+            (
+              state.race.startAt-
+              now
+            )/
+            1000
+          )
+        )
+      }초`;
+
+  }else if(
+    now<
+    state.race.endAt
+  ){
+
+    $('countdown').textContent=
+      `레이스 중 · ${
+        Math.max(
+          0,
+          (
+            (
+              state.race.endAt-
+              now
+            )/
+            1000
+          )
+        ).toFixed(1)
+      }초`;
+
+  }else{
+
+    $('countdown').textContent=
+      state.race.winner
+        ?`🏆 1등 ${state.race.winner}`
+        :'🏁 종료';
+
+  }
+
+}
+
+async function loadComments(){
+
+  const key=
+    $('key')
+      .value
+      .trim();
+
+  const url=
+    $('post')
+      .value
+      .trim();
+
+  if(!key)
+    return alert(
+      'ADMIN_KEY를 입력하세요.'
+    );
+
+  if(!url)
+    return alert(
+      '디시 게시글 주소를 입력하세요.'
+    );
+
+  try{
+
+    const d=
+      await api(
+        '/api/admin/import',
+        {
+          method:'POST',
+          headers:{
+            'Content-Type':
+              'application/json',
+
+            'Authorization':
+              'Bearer '+
+              key
+          },
+          body:
+            JSON.stringify({
+              url
+            })
+        }
+      );
+
+    await refresh();
+
+    alert(
+      `참가자 ${d.count}명 불러왔습니다.`
+    );
+
+  }catch(e){
+
+    alert(
+      e.message
+    );
+
+  }
+
+}
+
+async function startRace(){
+
+  const key=
+    $('key')
+      .value
+      .trim();
+
+  if(!key)
+    return alert(
+      'ADMIN_KEY를 입력하세요.'
+    );
+
+  if(!state.racers.length)
+    return alert(
+      '먼저 댓글을 불러오세요.'
+    );
+
+  if(
+    !confirm(
+      '지금부터 30초 뒤에 공개 레이스를 시작할까요?'
+    )
+  )
+    return;
+
+  try{
+
+    await api(
+      '/api/admin/start',
+      {
+        method:'POST',
+        headers:{
+          'Authorization':
+            'Bearer '+
+            key
+        }
+      }
+    );
+
+    await refresh();
+
+    alert(
+      '예약 완료! 공개 화면에서 30초 카운트다운이 시작됐습니다.'
+    );
+
+  }catch(e){
+
+    alert(
+      e.message
+    );
+
+  }
+
+}
+
+async function resetRace(){
+
+  const key=
+    $('key')
+      .value
+      .trim();
+
+  if(!key)
+    return alert(
+      'ADMIN_KEY를 입력하세요.'
+    );
+
+  if(
+    !confirm(
+      '참가자와 레이스를 전부 초기화할까요?'
+    )
+  )
+    return;
+
+  try{
+
+    await api(
+      '/api/admin/reset',
+      {
+        method:'POST',
+        headers:{
+          'Authorization':
+            'Bearer '+
+            key
+        }
+      }
+    );
+
+    await refresh();
+
+  }catch(e){
+
+    alert(
+      e.message
+    );
+
+  }
+
+}
+
+window.loadComments=
+  loadComments;
+
+window.startRace=
+  startRace;
+
+window.resetRace=
+  resetRace;
+
+refresh();
+
+setInterval(
+  refresh,
+  1200
+);
+
+setInterval(
+  tick,
+  100
+);
+</script>
+
+</body>
+</html>
