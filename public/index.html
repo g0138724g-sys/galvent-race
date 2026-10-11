@@ -165,14 +165,49 @@ function getPlace(name){return state.race?.order?.find(x=>x.nickname===name)?.pl
 
 function calcProgress(name,now){
   if(!state.race)return 0;
+
   const place=getPlace(name)||state.racers.length;
   const total=Math.max(1,state.racers.length);
   const p=Math.min(1,Math.max(0,(now-state.race.startedAt)/durationMs));
-  if(p>=1)return place===1?1.01:Math.max(.80,.985-place*.0025);
-  const bias=place===1?1.02:.90-((place-2)/Math.max(1,total-1))*.24;
+
+  if(p>=1){
+    return place===1 ? 1.008 : Math.max(.94,.998-place*.0017);
+  }
+
   const seed=[...name].reduce((a,c)=>a+c.charCodeAt(0),0);
-  const wobble=Math.sin(now/640+seed*.17)*(1-p)*.018;
-  return Math.max(0,Math.min(.995,p*bias+wobble));
+  const t=(now-state.race.startedAt)/1000;
+
+  // 참가자마다 다른 파동을 섞어서 거의 결승선 직전까지 계속 추월/재추월
+  const wave1=Math.sin(t*2.45 + seed*.31)*0.030;
+  const wave2=Math.sin(t*1.37 + seed*.17 + 1.7)*0.024;
+  const wave3=Math.sin(t*4.60 + seed*.071 + 0.9)*0.013;
+  const surge=Math.sin(t*0.83 + seed*.43)*0.018;
+
+  // 아주 작은 개인차. 이 값만으로 계속 1등 고정되지 않게 약하게 둠.
+  const natural=((seed%29)-14)/14 * 0.008;
+
+  // 진행률 자체는 거의 비슷하게 유지하고, 파동으로 계속 순위가 바뀌게 함.
+  // 94%까지는 파동을 거의 그대로 유지.
+  const chaosFade = p < 0.94 ? 1 : Math.max(0, (1-p)/0.06);
+  let freeRace =
+    p*(0.965 + natural) +
+    (wave1+wave2+wave3+surge)*chaosFade;
+
+  // 누구도 너무 일찍 결승선을 넘어가지 않게 제한
+  freeRace=Math.min(freeRace,0.992);
+
+  // 최종 순위 목표점
+  const finalTarget = place===1
+    ? 1.008
+    : Math.max(.94,.998-place*.0017);
+
+  // 순위 고정은 진짜 마지막 6%에서만 시작
+  const x=Math.max(0,Math.min(1,(p-0.94)/0.06));
+  const finalLock=x*x*(3-2*x);
+
+  const result=freeRace*(1-finalLock)+finalTarget*finalLock;
+
+  return Math.max(0,Math.min(1.008,result));
 }
 function liveOrder(now){
   return state.racers.map(r=>({nickname:r.nickname,p:calcProgress(r.nickname,now),place:getPlace(r.nickname)||9999}))
