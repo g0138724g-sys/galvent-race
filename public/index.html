@@ -167,47 +167,61 @@ function calcProgress(name,now){
   if(!state.race)return 0;
 
   const place=getPlace(name)||state.racers.length;
-  const total=Math.max(1,state.racers.length);
   const p=Math.min(1,Math.max(0,(now-state.race.startedAt)/durationMs));
+  const t=(now-state.race.startedAt)/1000;
+  const seed=[...name].reduce((a,c)=>a+c.charCodeAt(0),0);
 
   if(p>=1){
-    return place===1 ? 1.008 : Math.max(.94,.998-place*.0017);
+    return place===1 ? 1.012 : Math.max(.955,.999-place*.0016);
   }
 
-  const seed=[...name].reduce((a,c)=>a+c.charCodeAt(0),0);
-  const t=(now-state.race.startedAt)/1000;
+  // 기본 진행: 모두 거의 같은 속도
+  let pos = p * 0.965;
 
-  // 참가자마다 다른 파동을 섞어서 거의 결승선 직전까지 계속 추월/재추월
-  const wave1=Math.sin(t*2.45 + seed*.31)*0.030;
-  const wave2=Math.sin(t*1.37 + seed*.17 + 1.7)*0.024;
-  const wave3=Math.sin(t*4.60 + seed*.071 + 0.9)*0.013;
-  const surge=Math.sin(t*0.83 + seed*.43)*0.018;
+  // 0~94%: 계속 엎치락뒤치락
+  const chaos =
+    Math.sin(t*2.9 + seed*.37)*0.030 +
+    Math.sin(t*1.7 + seed*.19 + 1.3)*0.022 +
+    Math.sin(t*4.8 + seed*.083 + 0.6)*0.012;
 
-  // 아주 작은 개인차. 이 값만으로 계속 1등 고정되지 않게 약하게 둠.
-  const natural=((seed%29)-14)/14 * 0.008;
+  pos += chaos * (p < .94 ? 1 : Math.max(0,(1-p)/.06));
 
-  // 진행률 자체는 거의 비슷하게 유지하고, 파동으로 계속 순위가 바뀌게 함.
-  // 94%까지는 파동을 거의 그대로 유지.
-  const chaosFade = p < 0.94 ? 1 : Math.max(0, (1-p)/0.06);
-  let freeRace =
-    p*(0.965 + natural) +
-    (wave1+wave2+wave3+surge)*chaosFade;
+  // 1등은 96% 전까지 일부러 선두 고정되지 않게 살짝 눌러둠
+  if(place===1 && p<.96){
+    pos -= 0.020 + Math.sin(t*3.2+seed)*0.006;
+  }
 
-  // 누구도 너무 일찍 결승선을 넘어가지 않게 제한
-  freeRace=Math.min(freeRace,0.992);
+  // 2~4등은 막판 직전 잠깐 치고 나가게 해서 "가짜 선두" 생성
+  if(place>=2 && place<=4 && p>.84 && p<.975){
+    const hump = Math.sin(((p-.84)/.135)*Math.PI); // 중간에서 최고
+    pos += hump * (0.026 - (place-2)*0.004);
+  }
 
-  // 최종 순위 목표점
-  const finalTarget = place===1
-    ? 1.008
-    : Math.max(.94,.998-place*.0017);
+  // 96%부터 최종 1등이 뒤에서 강하게 추월
+  if(place===1 && p>=.96){
+    const x=(p-.96)/.04;
+    pos += x*x * 0.070;
+  }
 
-  // 순위 고정은 진짜 마지막 6%에서만 시작
-  const x=Math.max(0,Math.min(1,(p-0.94)/0.06));
-  const finalLock=x*x*(3-2*x);
+  // 2등 이하도 결승 직전까지 거의 붙어 있게
+  if(place>1 && p>=.96){
+    const x=(p-.96)/.04;
+    const target=Math.max(.955,.999-place*.0016);
+    pos = pos*(1-x) + target*x;
+  }
 
-  const result=freeRace*(1-finalLock)+finalTarget*finalLock;
+  // 진짜 마지막 1.2%에서만 최종 순위 완전히 고정
+  if(p>=.988){
+    const x=(p-.988)/.012;
+    const smooth=x*x*(3-2*x);
+    const target=place===1 ? 1.012 : Math.max(.955,.999-place*.0016);
+    pos = pos*(1-smooth)+target*smooth;
+  }
 
-  return Math.max(0,Math.min(1.008,result));
+  // 너무 일찍 결승선 통과 방지
+  if(p<.988) pos=Math.min(pos,.995);
+
+  return Math.max(0,Math.min(1.012,pos));
 }
 function liveOrder(now){
   return state.racers.map(r=>({nickname:r.nickname,p:calcProgress(r.nickname,now),place:getPlace(r.nickname)||9999}))
