@@ -215,8 +215,28 @@ function renderRacers(){
   });
 }
 function renderTop10(){
-  const rows=(live.positions||[]).slice(0,10);
-  $('top10List').innerHTML=rows.length?rows.map((r,i)=>`<div class="top10Row ${r.nickname===selectedPigName?'me':''}"><span>${i+1}위</span><span>${esc(r.nickname)}</span></div>`).join(''):'레이스 대기중';
+  let rows=[];
+
+  if(state.race?.phase==='finished' && Array.isArray(state.race?.order)){
+    rows=state.race.order.slice(0,10).map((r,i)=>({
+      nickname:r.nickname,
+      rank:i+1
+    }));
+  }else{
+    rows=(live.positions||[]).slice(0,10).map((r,i)=>({
+      nickname:r.nickname,
+      rank:r.livePlace||i+1
+    }));
+  }
+
+  $('top10List').innerHTML=rows.length
+    ?rows.map(r=>`
+      <div class="top10Row ${r.nickname===selectedPigName?'me':''}">
+        <span>${r.rank}위</span>
+        <span>${esc(r.nickname)}</span>
+      </div>
+    `).join('')
+    :'레이스 대기중';
 }
 
 function renderFullLive(){
@@ -229,17 +249,27 @@ function renderFullLive(){
   const lm=liveMap();
   const phase=live.phase||state.race?.phase||'idle';
 
-  let rows=roster.map(r=>{
-    const d=lm.get(r.nickname);
-    return {
-      nickname:r.nickname,
-      progress:d?.progress||0,
-      livePlace:d?.livePlace||9999
-    };
-  });
+  let rows;
 
-  if(phase==='running'||phase==='finished'){
-    rows.sort((a,b)=>a.livePlace-b.livePlace);
+  if(state.race?.phase==='finished' && Array.isArray(state.race?.order)){
+    rows=state.race.order.map((r,i)=>({
+      nickname:r.nickname,
+      progress:i===0?1:Math.max(.94,.998-(i+1)*.0016),
+      livePlace:i+1
+    }));
+  }else{
+    rows=roster.map(r=>{
+      const d=lm.get(r.nickname);
+      return {
+        nickname:r.nickname,
+        progress:d?.progress||0,
+        livePlace:d?.livePlace||9999
+      };
+    });
+
+    if(phase==='running'){
+      rows.sort((a,b)=>a.livePlace-b.livePlace);
+    }
   }
 
   box.innerHTML=rows.map((r,i)=>{
@@ -253,7 +283,7 @@ function renderFullLive(){
         <div class="fullLiveRank">${rank}</div>
         <div class="fullLiveName">${esc(r.nickname)}</div>
         <div class="fullTrack">
-          <img class="fullPig" src="/pig-runner-transparent.png" alt="" style="transform:translateX(calc(${pct}% * 1));left:${pct}%">
+          <img class="fullPig" src="/pig-runner-transparent.png" alt="" style="left:${pct}%">
         </div>
       </div>
     `;
@@ -291,12 +321,12 @@ function updateClock(){
     $('substatus').textContent='레이스 진행 중!';
     $('waitingOverlay').style.display='none';
   }else{
-    $('timer').textContent='🏁 FINISH!';
+    $('timer').textContent='레이스 종료';
     $('substatus').textContent=r.winner?`레이스 종료 · 1등 ${r.winner}`:'레이스 종료';
     $('waitingOverlay').style.display='none';
     if(r.winner){
       $('winnerBanner').style.display='block';
-      $('winnerBanner').textContent=`🏆 1등 ${r.winner} 🐷`;
+      $('winnerBanner').textContent=`🏆 최종 1등 ${r.winner} 🐷`;
     }
   }
 }
