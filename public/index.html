@@ -1,222 +1,85 @@
 <!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>갤벤 레이스</title>
-  <style>
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:Arial,"Noto Sans KR",sans-serif;
-      background:linear-gradient(180deg,#89d7ff 0%,#c8f0ff 35%,#7cc46a 35%,#5aa14a 100%);
-      color:#1f2430;
-    }
-    .wrap{max-width:1400px;margin:auto;padding:18px}
-    .title{font-size:40px;font-weight:900;text-align:center;margin:4px 0 8px}
-    .sub{text-align:center;margin-bottom:14px;color:#234}
-    .panel{
-      background:#ffffffee;
-      border-radius:22px;
-      padding:16px;
-      margin-bottom:14px;
-      box-shadow:0 8px 22px #0002;
-      border:2px solid #ffffff;
-    }
-    .controls{
-      display:grid;
-      grid-template-columns:1fr 2fr repeat(4,auto);
-      gap:8px;
-      align-items:center;
-    }
-    input,button{
-      font:inherit;
-      padding:12px 14px;
-      border-radius:12px;
-      border:2px solid #d7dfe9;
-    }
-    input{background:#fff}
-    button{
-      border:0;
-      font-weight:900;
-      cursor:pointer;
-    }
-    .btn-load{background:#ffd65b}
-    .btn-start{background:#ff8c8c}
-    .btn-reset{background:#ddd}
-    .btn-music{background:#b7d7ff}
-    .status{margin-top:10px;text-align:center;font-weight:900}
-    .substatus{margin-top:6px;text-align:center;font-size:13px;color:#5a6475}
-    .scenePanel{padding:10px}
-    #sceneWrap{
-      position:relative;
-      width:100%;
-      height:72vh;
-      min-height:520px;
-      border-radius:20px;
-      overflow:hidden;
-      background:linear-gradient(180deg,#8fd9ff 0%,#daf7ff 40%,#88cf74 40%,#64ad52 100%);
-    }
-    #scene{width:100%;height:100%;display:block}
-    #nameLayer{
-      position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:5;
-    }
-    .pigNameTag{
-      position:absolute;left:0;top:0;transform:translate(-50%,-100%);
-      padding:3px 7px;border-radius:9px;background:rgba(255,255,255,.94);
-      border:1px solid rgba(0,0,0,.18);box-shadow:0 2px 7px rgba(0,0,0,.22);
-      font-size:12px;line-height:1.15;font-weight:900;color:#171717;
-      white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;
-      will-change:transform;
-    }
-    .pigNameTag.top10{
-      padding:4px 8px;background:rgba(255,245,180,.97);
-      border:2px solid #f4bd35;font-size:13px;z-index:7;
-    }
-    .pigNameTag.mine{
-      padding:5px 10px;background:rgba(255,220,239,.98);
-      border:2px solid #ff4e9a;color:#d90062;font-size:16px;z-index:9;
-    }
-    .overlay{
-      position:absolute;inset:0;
-      pointer-events:none;
-    }
-    .timerBadge{
-      position:absolute;top:14px;left:14px;
-      background:#ffffffdd;
-      border-radius:14px;
-      padding:10px 14px;
-      font-size:22px;
-      font-weight:900;
-      box-shadow:0 4px 14px #0002;
-    }
-    .infoBadge{
-      position:absolute;top:14px;right:14px;
-      background:#ffffffdd;
-      border-radius:14px;
-      padding:10px 14px;
-      font-size:14px;
-      font-weight:800;
-      box-shadow:0 4px 14px #0002;
-      text-align:right;
-      line-height:1.5;
-    }
-    .winnerBanner{
-      position:absolute;
-      left:50%;bottom:18px;transform:translateX(-50%);
-      background:#fff2a8ee;
-      border:2px solid #ffe16b;
-      border-radius:18px;
-      padding:16px 26px;
-      font-size:28px;
-      font-weight:900;
-      box-shadow:0 8px 18px #0002;
-      display:none;
-    }
-    .lower{
-      display:grid;
-      grid-template-columns:1.1fr .9fr;
-      gap:14px;
-    }
-    .listBox{
-      max-height:360px;
-      overflow:auto;
-      display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-      gap:8px;
-      margin-top:10px;
-    }
-    .person{
-      background:#f4f6f8;
-      border-radius:10px;
-      padding:8px 10px;
-      font-size:13px;
-      font-weight:700;
-    }
-    .note{
-      font-size:13px;color:#677080;line-height:1.6
-    }
-    .ranking{
-      max-height:360px;
-      overflow:auto;
-      margin-top:10px;
-    }
-    .rankRow{
-      display:flex;justify-content:space-between;gap:10px;
-      padding:8px 10px;border-radius:10px;background:#f8f8f8;margin-bottom:6px;
-      font-size:13px;font-weight:800;
-    }
-    .rankRow.top1{background:#fff0a8}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>갤벤 레이스</title>
+<style>
+*{box-sizing:border-box}
+:root{--pink:#ff84ad;--ink:#232633;--paper:#fffefb}
+body{
+  margin:0;font-family:Arial,"Noto Sans KR",sans-serif;color:var(--ink);
+  background:linear-gradient(#86d9ff 0 28%,#b9ecff 28% 36%,#74bd59 36% 100%);
+}
+.wrap{max-width:1400px;margin:auto;padding:18px}
+.title{text-align:center;font-weight:1000;font-size:40px;margin:4px 0 6px}
+.sub{text-align:center;margin-bottom:14px;font-weight:700;color:#34435a}
+.panel{background:#fffffff0;border:2px solid #fff;border-radius:22px;padding:15px;margin-bottom:14px;box-shadow:0 8px 25px #0002}
+.controls{display:grid;grid-template-columns:1fr 2fr repeat(4,auto);gap:8px;align-items:center}
+input,button{font:inherit;padding:11px 13px;border-radius:12px}
+input{border:2px solid #d9e1eb;background:#fff}
+button{border:0;font-weight:900;cursor:pointer}
+.btn-load{background:#ffd55d}.btn-start{background:#ff9696}.btn-reset{background:#ddd}.btn-music{background:#bfe0ff}
+.status{text-align:center;margin-top:10px;font-weight:1000}.substatus{text-align:center;margin-top:5px;font-size:13px;color:#657084}
+.myPigControls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:10px}.myPigControls input{width:min(360px,100%)}
+.btn-my{background:#ffc8dc}.btn-all{background:#cce8ff}
 
-    .myPigControls{
-      display:flex;
-      gap:8px;
-      margin-top:10px;
-      justify-content:center;
-      flex-wrap:wrap;
-    }
-    .myPigControls input{
-      width:min(360px,100%);
-    }
-    .btn-my{background:#ffc7df}
-    .btn-all{background:#cfe8ff}
-    .myPigBadge{
-      position:absolute;
-      left:50%;
-      top:14px;
-      transform:translateX(-50%);
-      background:#ffedf5ee;
-      border:2px solid #ff9fc6;
-      border-radius:15px;
-      padding:9px 14px;
-      font-weight:900;
-      font-size:15px;
-      box-shadow:0 4px 14px #0002;
-      display:none;
-    }
-    .top10Box{
-      position:absolute;
-      right:14px;
-      top:88px;
-      width:190px;
-      max-height:300px;
-      overflow:hidden;
-      background:#ffffffde;
-      border-radius:14px;
-      padding:9px;
-      box-shadow:0 4px 14px #0002;
-      font-size:12px;
-      font-weight:800;
-      pointer-events:none;
-    }
-    .top10Title{font-size:13px;font-weight:900;margin-bottom:5px;text-align:center}
-    .top10Row{
-      display:flex;
-      justify-content:space-between;
-      gap:6px;
-      padding:3px 5px;
-      border-radius:7px;
-      background:#f7f8fa;
-      margin-bottom:3px;
-    }
-    .top10Row.me{background:#ffd7e8}
-    @media (max-width:1100px){
-      .controls{grid-template-columns:1fr 1fr;gap:8px}
-      #sceneWrap{height:64vh;min-height:480px}
-      .lower{grid-template-columns:1fr}
-    }
-    @media (max-width:700px){
-      .controls{grid-template-columns:1fr}
-      .title{font-size:30px}
-      .winnerBanner{font-size:21px;width:calc(100% - 24px);text-align:center}
-      .timerBadge{font-size:18px}
-    }
-  </style>
+.raceShell{position:relative;height:70vh;min-height:560px;overflow:hidden;border-radius:20px;background:
+  linear-gradient(#80d8ff 0 25%,#e9f9ff 25% 34%,#65ae4f 34% 43%,#c78650 43% 100%)}
+.cloud{position:absolute;background:#fff;border-radius:999px;opacity:.9;filter:blur(.3px)}
+.c1{width:190px;height:55px;left:8%;top:8%}.c2{width:250px;height:65px;right:8%;top:13%}
+.hills{position:absolute;left:0;right:0;top:28%;height:17%;background:linear-gradient(160deg,#66a958 0 18%,#86c26d 18% 34%,#5b9c53 34% 54%,#78b964 54% 100%);clip-path:polygon(0 65%,12% 35%,23% 63%,38% 22%,52% 67%,69% 30%,83% 60%,100% 25%,100% 100%,0 100%)}
+.trackLines{position:absolute;inset:43% 0 0;background:repeating-linear-gradient(to bottom,transparent 0 9.8%,rgba(255,255,255,.28) 9.8% 10%)}
+.finish{position:absolute;right:6%;top:43%;bottom:0;width:18px;background:repeating-linear-gradient(to bottom,#fff 0 14px,#111 14px 28px);box-shadow:0 0 0 4px #fff5}
+.start{position:absolute;left:8%;top:43%;bottom:0;width:6px;background:#fff9}
+.raceLayer{position:absolute;inset:43% 0 0;overflow:hidden}
+
+.racer{
+  position:absolute;left:0;top:0;width:112px;height:110px;will-change:transform;
+  transform-origin:50% 100%;transition:filter .2s;
+}
+.racer.me{filter:drop-shadow(0 0 10px #ff4fa4) drop-shadow(0 0 18px #fff)}
+.pigCard{
+  position:absolute;left:14px;bottom:3px;width:78px;height:84px;border-radius:18px;overflow:hidden;
+  border:3px solid #fff;background:#fff;box-shadow:0 6px 12px #0003;
+  animation:runBob .24s ease-in-out infinite alternate;
+}
+.pigCard img{width:100%;height:100%;object-fit:cover;object-position:center 45%;display:block}
+.racer.me .pigCard{border-color:#ff63a4}
+.nameTag{
+  position:absolute;left:50%;bottom:88px;transform:translateX(-50%);
+  max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding:5px 8px;border-radius:9px;background:#fffffff0;border:1px solid #0001;
+  font-size:12px;font-weight:1000;box-shadow:0 3px 8px #0002
+}
+.placeTag{position:absolute;right:1px;bottom:8px;background:#252936;color:#fff;border-radius:999px;padding:4px 7px;font-size:11px;font-weight:1000}
+.meTag{position:absolute;left:50%;bottom:112px;transform:translateX(-50%);background:#ffecf5;border:2px solid #ff70aa;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:1000;display:none}
+.racer.me .meTag{display:block}
+@keyframes runBob{from{transform:translateY(0) rotate(-2deg)}to{transform:translateY(-5px) rotate(2deg)}}
+.racer.winner .pigCard{animation:winnerDance .42s ease-in-out infinite alternate}
+@keyframes winnerDance{from{transform:translateY(0) rotate(-9deg) scale(1)}to{transform:translateY(-16px) rotate(9deg) scale(1.08)}}
+
+.timerBadge,.sceneInfo,.myPigBadge,.top10Box,.winnerBanner{position:absolute;z-index:20;background:#ffffffea;box-shadow:0 5px 16px #0002}
+.timerBadge{left:14px;top:14px;padding:10px 14px;border-radius:14px;font-size:21px;font-weight:1000}
+.sceneInfo{right:14px;top:14px;padding:10px 14px;border-radius:14px;text-align:right;font-size:13px;font-weight:900;line-height:1.5}
+.myPigBadge{left:50%;top:14px;transform:translateX(-50%);padding:9px 14px;border:2px solid #ff91bb;border-radius:14px;font-weight:1000;display:none}
+.top10Box{right:14px;top:83px;width:190px;padding:9px;border-radius:14px;font-size:12px;font-weight:900}
+.top10Title{text-align:center;margin-bottom:5px}.top10Row{display:flex;justify-content:space-between;gap:7px;padding:3px 5px;background:#f6f7f9;border-radius:7px;margin-bottom:3px}.top10Row.me{background:#ffd6e6}
+.winnerBanner{left:50%;bottom:16px;transform:translateX(-50%);padding:14px 22px;border-radius:18px;background:#fff2a8;border:2px solid #ffe166;font-size:26px;font-weight:1000;display:none}
+
+.lower{display:grid;grid-template-columns:1.1fr .9fr;gap:14px}
+.listBox{max-height:330px;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-top:10px}
+.person{background:#f4f6f8;border-radius:10px;padding:8px 10px;font-size:13px;font-weight:800}
+.ranking{max-height:330px;overflow:auto;margin-top:10px}.rankRow{display:flex;justify-content:space-between;padding:8px 10px;border-radius:9px;background:#f7f7f8;margin-bottom:6px;font-size:13px;font-weight:900}.rankRow.top1{background:#fff0a8}
+.note{font-size:13px;color:#687282;line-height:1.6;margin-top:10px}
+@media(max-width:1100px){.controls{grid-template-columns:1fr 1fr}.raceShell{height:65vh}.lower{grid-template-columns:1fr}}
+@media(max-width:700px){.controls{grid-template-columns:1fr}.title{font-size:30px}.raceShell{min-height:520px}.top10Box{width:155px}.winnerBanner{font-size:20px;width:calc(100% - 24px);text-align:center}.racer{width:92px}.pigCard{width:63px;height:72px}.nameTag{bottom:76px;font-size:10px}}
+</style>
 </head>
 <body>
 <div class="wrap">
   <div class="title">🏁 갤벤 레이스 🐷</div>
-  <div class="sub">디시 갤벤 글 댓글 작성자가 자동 참가 · 두발로 뛰는 돼지 3D 레이스</div>
+  <div class="sub">디시 댓글 작성자가 자동 참가 · 2D 돼지 캐릭터 레이스</div>
 
   <div class="panel">
     <div class="controls">
@@ -236,988 +99,144 @@
     </div>
   </div>
 
-  <div class="panel scenePanel">
-    <div id="sceneWrap">
-      <canvas id="scene"></canvas>
-      <div id="nameLayer"></div>
-      <div class="overlay">
-        <div class="timerBadge" id="timer">대기 중</div>
-        <div class="myPigBadge" id="myPigBadge"></div>
-        <div class="infoBadge" id="sceneInfo">참가자 0명<br>30초 레이스</div>
-        <div class="top10Box" id="top10Box"><div class="top10Title">TOP 10</div><div id="top10List">레이스 대기중</div></div>
-        <div class="winnerBanner" id="winnerBanner"></div>
-      </div>
+  <div class="panel">
+    <div class="raceShell" id="raceShell">
+      <div class="cloud c1"></div><div class="cloud c2"></div><div class="hills"></div>
+      <div class="start"></div><div class="finish"></div><div class="trackLines"></div>
+      <div class="raceLayer" id="raceLayer"></div>
+
+      <div class="timerBadge" id="timer">대기 중</div>
+      <div class="myPigBadge" id="myPigBadge"></div>
+      <div class="sceneInfo" id="sceneInfo">참가자 0명<br>30초 레이스</div>
+      <div class="top10Box"><div class="top10Title">TOP 10</div><div id="top10List">레이스 대기중</div></div>
+      <div class="winnerBanner" id="winnerBanner"></div>
     </div>
   </div>
 
   <div class="lower">
+    <div class="panel"><b>🐷 참가자 명단</b><div class="listBox" id="list"></div></div>
     <div class="panel">
-      <b>🐷 참가자 명단</b>
-      <div class="listBox" id="list"></div>
-    </div>
-
-    <div class="panel">
-      <b>🏆 최종 순위</b>
-      <div class="ranking" id="ranking"></div>
-      <div class="note" style="margin-top:10px">
-        - 같은 사람은 1마리만 참가<br>
-        - 최대 200명까지 참가<br>
-        - 1등 돼지는 골인 후 춤춤<br>
-        - 음악은 <b>public/race.mp3</b> 넣으면 재생됨
-      </div>
+      <b>🏆 최종 순위</b><div class="ranking" id="ranking"></div>
+      <div class="note">- 같은 사람은 1마리만 참가<br>- 최대 200명까지 참가<br>- 화면에는 선두권 + 내 돼지를 크게 보여줌<br>- 1등은 골인 후 춤춤<br>- 음악은 <b>public/race.mp3</b>가 있으면 재생됨</div>
     </div>
   </div>
 </div>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.166.1/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.166.1/examples/jsm/"
+<script>
+const $=id=>document.getElementById(id);
+const durationMs=30000;
+const bgm=new Audio('/race.mp3'); bgm.loop=true; bgm.volume=.55;
+let musicEnabled=true, state={racers:[],race:null}, selectedPigName=localStorage.getItem('galvent_my_pig')||'', cameraMode=selectedPigName?'mine':'all';
+let finishShown=false,lastSig='', racerEls=new Map(), lastLiveTop=[];
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function api(url,opt={}){const r=await fetch(url,opt);const d=await r.json().catch(()=>({error:'서버 응답 오류'}));if(!r.ok)throw Error(d.error||'오류가 발생했습니다.');return d}
+function setStatus(t){$('status').textContent=t} function setSub(t){$('substatus').textContent=t}
+
+function getPlace(name){return state.race?.order?.find(x=>x.nickname===name)?.place||null}
+function calcProgress(name,now){
+  if(!state.race)return 0;
+  const place=getPlace(name)||state.racers.length;
+  const total=Math.max(1,state.racers.length);
+  const p=Math.min(1,Math.max(0,(now-state.race.startedAt)/durationMs));
+  if(p>=1)return place===1?1.01:Math.max(.80,.985-place*.0025);
+  const bias=place===1?1.02:.90-((place-2)/Math.max(1,total-1))*.24;
+  const seed=[...name].reduce((a,c)=>a+c.charCodeAt(0),0);
+  const wobble=Math.sin(now/630+seed*.17)*(1-p)*.018;
+  return Math.max(0,Math.min(.995,p*bias+wobble));
+}
+function liveOrder(now){
+  return state.racers.map(r=>({nickname:r.nickname,p:calcProgress(r.nickname,now),place:getPlace(r.nickname)||9999}))
+    .sort((a,b)=>b.p-a.p||a.place-b.place);
+}
+function visibleNames(now){
+  if(!state.racers.length)return [];
+  let names;
+  if(state.race)names=liveOrder(now).slice(0,10).map(x=>x.nickname);
+  else names=state.racers.slice(0,10).map(r=>r.nickname);
+  if(cameraMode==='mine'&&selectedPigName&&state.racers.some(r=>r.nickname===selectedPigName)&&!names.includes(selectedPigName)){
+    names[names.length?names.length-1:0]=selectedPigName;
   }
+  return [...new Set(names)];
 }
-</script>
-<script type="module">
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
-
-const $ = id => document.getElementById(id);
-
-let state = { racers: [], race: null };
-let scene, camera, renderer, clock;
-let pigs = [];
-let worldGroup = null;
-let lastSignature = '';
-let musicEnabled = true;
-let finishShown = false;
-let selectedPigName = localStorage.getItem('galvent_my_pig') || '';
-let cameraMode = selectedPigName ? 'mine' : 'all';
-let pigTemplate = null;
-let pigModelReady = false;
-let pigModelError = '';
-const pigModelUrls = ['/piggu.glb','/piggu_test.glb','/piggu_web.glb'];
-const _axisX = new THREE.Vector3(1,0,0);
-const _axisZ = new THREE.Vector3(0,0,1);
-const _tmpQ = new THREE.Quaternion();
-const _tmpV = new THREE.Vector3();
-const durationMs = 30000;
-const bgm = new Audio('/race.mp3');
-bgm.loop = true;
-bgm.volume = 0.55;
-
-function esc(s){
-  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-async function api(url,opt={}){
-  const r = await fetch(url,opt);
-  const d = await r.json().catch(()=>({error:'서버 응답 오류'}));
-  if(!r.ok) throw Error(d.error || '오류가 발생했습니다.');
-  return d;
-}
-
-function setStatus(t){ $('status').textContent = t; }
-function setSub(t){ $('substatus').textContent = t; }
-
-function initScene(){
-  const canvas = $('scene');
-  renderer = new THREE.WebGLRenderer({
-    canvas,
-    antialias:false,
-    alpha:true,
-    powerPreference:'high-performance'
+function buildRacers(now=Date.now()){
+  const names=visibleNames(now), sig=names.join('|')+'|'+cameraMode+'|'+selectedPigName;
+  if(sig===lastSig)return;
+  lastSig=sig; racerEls.clear(); $('raceLayer').innerHTML='';
+  names.forEach((name,i)=>{
+    const el=document.createElement('div'); el.className='racer'+(name===selectedPigName?' me':''); el.dataset.name=name;
+    el.innerHTML=`<div class="meTag">⭐ 내 돼지</div><div class="nameTag">${esc(name)}</div><div class="pigCard"><img src="/pig-runner.png" alt=""></div><div class="placeTag"></div>`;
+    $('raceLayer').appendChild(el); racerEls.set(name,el);
   });
-  renderer.setPixelRatio(0.8);
-  renderer.setSize($('sceneWrap').clientWidth, $('sceneWrap').clientHeight, false);
-  renderer.shadowMap.enabled = false;
-
-  scene = new THREE.Scene();
-  scene.fog = new THREE.Fog(0xdff6ff, 40, 140);
-
-  camera = new THREE.PerspectiveCamera(
-    48,
-    $('sceneWrap').clientWidth / $('sceneWrap').clientHeight,
-    0.1,
-    400
-  );
-  camera.position.set(15, 28, 34);
-  camera.lookAt(6, 0, 0);
-
-  clock = new THREE.Clock();
-
-  const hemi = new THREE.HemisphereLight(0xffffff, 0x6dbd66, 1.2);
-  scene.add(hemi);
-
-  const dir = new THREE.DirectionalLight(0xffffff, 1.25);
-  dir.position.set(15, 30, 16);
-  dir.castShadow = false;
-  dir.shadow.mapSize.set(2048,2048);
-  dir.shadow.camera.left = -80;
-  dir.shadow.camera.right = 80;
-  dir.shadow.camera.top = 80;
-  dir.shadow.camera.bottom = -80;
-  scene.add(dir);
-
-  window.addEventListener('resize', onResize);
-  animate();
 }
-
-function onResize(){
-  const w = $('sceneWrap').clientWidth;
-  const h = $('sceneWrap').clientHeight;
-  renderer.setSize(w,h,false);
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-}
-
-function makeLabel(text){
-  const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 128;
-  const ctx = c.getContext('2d');
-
-  ctx.fillStyle = 'rgba(255,255,255,0.96)';
-  roundRect(ctx, 0, 18, 512, 84, 24);
-  ctx.fill();
-
-  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
-  ctx.lineWidth = 3;
-  roundRect(ctx, 1.5, 19.5, 509, 81, 22);
-  ctx.stroke();
-
-  ctx.fillStyle = '#222';
-  ctx.font = 'bold 42px Arial';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  const clipped = text.length > 14 ? text.slice(0,14) + '…' : text;
-  ctx.fillText(clipped, 256, 60);
-
-  const tex = new THREE.CanvasTexture(c);
-  tex.needsUpdate = true;
-  const mat = new THREE.SpriteMaterial({map:tex, transparent:true});
-  const sprite = new THREE.Sprite(mat);
-  sprite.scale.set(4.8, 1.2, 1);
-  return sprite;
-}
-
-function roundRect(ctx, x, y, w, h, r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.arcTo(x+w,y,x+w,y+h,r);
-  ctx.arcTo(x+w,y+h,x,y+h,r);
-  ctx.arcTo(x,y+h,x,y,r);
-  ctx.arcTo(x,y,x+w,y,r);
-  ctx.closePath();
-}
-
-
-function makeMyMarker(){
-  const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 160;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = 'rgba(255,236,246,0.98)';
-  roundRect(ctx, 12, 22, 488, 110, 34);
-  ctx.fill();
-  ctx.strokeStyle = '#ff5fa3';
-  ctx.lineWidth = 8;
-  roundRect(ctx, 12, 22, 488, 110, 34);
-  ctx.stroke();
-  ctx.fillStyle = '#ff297f';
-  ctx.font = '900 45px Arial';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('⭐ 내 돼지', 256, 77);
-  const tex = new THREE.CanvasTexture(c);
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));
-  sprite.scale.set(4.8,1.5,1);
-  sprite.position.set(0,3.2,0);
-  sprite.visible = false;
-  return sprite;
-}
-
-function findBone(root, candidates){
-  for(const n of candidates){
-    const exact = root.getObjectByName(n);
-    if(exact && exact.isBone) return exact;
-  }
-  const wanted = candidates.map(x=>x.toLowerCase());
-  let found = null;
-  root.traverse(o=>{
-    if(found || !o.isBone) return;
-    const n = String(o.name || '').toLowerCase();
-    if(wanted.includes(n)) found = o;
+function renderFrame(){
+  const now=Date.now(); buildRacers(now);
+  const names=[...racerEls.keys()], h=$('raceLayer').clientHeight, laneH=Math.max(42,Math.min(66,h/Math.max(1,names.length)));
+  const shellW=$('raceLayer').clientWidth, startX=Math.max(4,shellW*.055), finishX=shellW*.88;
+  names.forEach((name,i)=>{
+    const el=racerEls.get(name), prog=calcProgress(name,now), x=startX+(finishX-startX)*prog, y=i*laneH+2;
+    const scale=Math.max(.62,1-i*.025);
+    el.style.transform=`translate(${x}px,${y}px) scale(${scale})`;
+    const pl=getPlace(name); el.querySelector('.placeTag').textContent=pl?`${pl}등`:'';
+    el.classList.toggle('winner',!!state.race&&now-state.race.startedAt>=durationMs&&pl===1);
   });
-  return found;
+  updateOverlay(now); updateTop10(now); updateMyBadge(); requestAnimationFrame(renderFrame);
 }
-
-function captureRig(model){
-  const bones = {
-    armL: findBone(model,['arm_ref.l']),
-    armR: findBone(model,['arm_ref.r']),
-    forearmL: findBone(model,['forearm_ref.l']),
-    forearmR: findBone(model,['forearm_ref.r']),
-    thighL: findBone(model,['thigh_ref.l']),
-    thighR: findBone(model,['thigh_ref.r']),
-    legL: findBone(model,['leg_ref.l']),
-    legR: findBone(model,['leg_ref.r']),
-    footL: findBone(model,['foot_ref.l']),
-    footR: findBone(model,['foot_ref.r'])
-  };
-
-  model.updateWorldMatrix(true,true);
-  const modelWorldQ = new THREE.Quaternion();
-  model.getWorldQuaternion(modelWorldQ);
-  const invModelWorldQ = modelWorldQ.clone().invert();
-
-  const restModel = {};
-  const restDir = {};
-  const localY = new THREE.Vector3(0,1,0);
-
-  for(const [key,bone] of Object.entries(bones)){
-    if(!bone) continue;
-
-    const boneWorldQ = new THREE.Quaternion();
-    bone.getWorldQuaternion(boneWorldQ);
-
-    // Bone rest orientation expressed in Piggu model-local coordinates.
-    const q = invModelWorldQ.clone().multiply(boneWorldQ);
-    restModel[key] = q;
-
-    // In Blender/glTF bones extend along their local +Y axis.
-    restDir[key] = localY.clone().applyQuaternion(q).normalize();
-  }
-
-  return {bones,restModel,restDir,modelRoot:model};
-}
-
-const _aimFrom = new THREE.Vector3();
-const _aimTo = new THREE.Vector3();
-const _aimDelta = new THREE.Quaternion();
-const _aimDesiredModel = new THREE.Quaternion();
-const _aimModelWorld = new THREE.Quaternion();
-const _aimParentWorld = new THREE.Quaternion();
-const _aimDesiredWorld = new THREE.Quaternion();
-
-function aimBoneModel(rig,key,x,y,z){
-  const bone = rig.bones[key];
-  const restQ = rig.restModel[key];
-  const restD = rig.restDir[key];
-  if(!bone || !restQ || !restD || !bone.parent) return;
-
-  _aimTo.set(x,y,z);
-  if(_aimTo.lengthSq() < 1e-8) return;
-  _aimTo.normalize();
-  _aimFrom.copy(restD);
-
-  // Rotate the original bone direction to the requested model-space direction.
-  // This avoids guessing each bone's strange Rigify local rotation axes.
-  _aimDelta.setFromUnitVectors(_aimFrom,_aimTo);
-  _aimDesiredModel.copy(restQ).premultiply(_aimDelta);
-
-  rig.modelRoot.updateWorldMatrix(true,false);
-  bone.parent.updateWorldMatrix(true,false);
-
-  rig.modelRoot.getWorldQuaternion(_aimModelWorld);
-  bone.parent.getWorldQuaternion(_aimParentWorld);
-
-  _aimDesiredWorld.copy(_aimModelWorld).multiply(_aimDesiredModel);
-
-  // local = inverse(parentWorld) * desiredWorld
-  bone.quaternion.copy(_aimParentWorld).invert().multiply(_aimDesiredWorld);
-  bone.updateMatrixWorld(true);
-}
-
-function makeNameTag(name){
-  const el = document.createElement('div');
-  el.className = 'pigNameTag';
-  el.textContent = name;
-  $('nameLayer').appendChild(el);
-  return el;
-}
-
-
-function isRigHelper(o){
-  const n = String(o.name || '').toLowerCase();
-  return n.startsWith('wgt-') || n.startsWith('wgt_') ||
-         n.includes('custom_shape') || n.includes('widget') ||
-         n.includes('rig_ui') || n.includes('metarig');
-}
-
-function characterBounds(model){
-  const skinnedBox = new THREE.Box3();
-  let skinnedCount = 0;
-  model.updateMatrixWorld(true);
-  model.traverse(o=>{
-    if(o.isSkinnedMesh && !isRigHelper(o)){
-      skinnedBox.expandByObject(o, true);
-      skinnedCount++;
-    }
-  });
-  if(skinnedCount && !skinnedBox.isEmpty()) return skinnedBox;
-
-  const meshBox = new THREE.Box3();
-  model.traverse(o=>{
-    if(o.isMesh && !isRigHelper(o) && o.visible !== false){
-      meshBox.expandByObject(o, true);
-    }
-  });
-  return meshBox;
-}
-
-function createPig(name, index, total, laneZ, startX, finishX){
-  const g = new THREE.Group();
-  const facing = new THREE.Group();
-  const model = cloneSkeleton(pigTemplate);
-
-  model.traverse(o=>{
-    if(o.isMesh){
-      o.visible = true;
-      o.castShadow = false;
-      o.receiveShadow = false;
-
-      // Piggu is split into Body / Head / Nose / Eyes / Teeth / Tongue.
-      // Keep all pieces alive so eyes/body cannot vanish independently.
-      o.frustumCulled = false;
-    }
-  });
-
-  /*
-    Verified from the uploaded GLB:
-      character geometry Y ≈ 0.01 .. 13.48
-    so 0.18 gives a ~2.43-world-unit tall character.
-    Do not recenter or calculate bounds from Rigify helper bones.
-  */
-  model.scale.setScalar(0.18);
-  model.position.set(0,0,0);
-
-  // Piggu's nose faces native +Z. Race finish is +X.
-  facing.rotation.set(0,Math.PI/2,0);
-  facing.add(model);
-  g.add(facing);
-
-  const labelEl = makeNameTag(name);
-  const baseY = -1.345; // feet sit almost exactly on the track at y=-1.35
-  g.position.set(startX,baseY,laneZ);
-
-  g.updateWorldMatrix(true,true);
-  const rig = captureRig(model);
-
-  g.userData = {
-    name,index,startX,finishX,laneZ,baseY,
-    model,facing,rig,labelEl,
-    seed:index*0.73+1.1,
-    displayHeight:2.43
-  };
-  return g;
-}
-
-function racersFor3D(){
-  const byName = new Map(state.racers.map(r=>[r.nickname,r]));
-  let names = [];
-
-  if(state.race?.order?.length){
-    names = state.race.order.slice(0,10).map(r=>r.nickname);
-  }else{
-    names = state.racers.slice(0,10).map(r=>r.nickname);
-  }
-
-  if(selectedPigName && byName.has(selectedPigName) && !names.includes(selectedPigName)){
-    names.push(selectedPigName);
-  }
-
-  return names.map(n=>byName.get(n)).filter(Boolean);
-}
-
-async function loadPigModel(){
-  const loader = new GLTFLoader();
-
-  // Blender에서 Draco Compression으로 내보낸 GLB를 읽기 위한 디코더
-  const dracoLoader = new DRACOLoader();
-  dracoLoader.setDecoderPath('https://unpkg.com/three@0.166.1/examples/jsm/libs/draco/gltf/');
-  dracoLoader.preload();
-  loader.setDRACOLoader(dracoLoader);
-
-  let lastErr = null;
-
-  for(const url of pigModelUrls){
-    try{
-      const gltf = await loader.loadAsync(url);
-
-      // 실제 업로드된 GLB에는 캐릭터가 2세트 + Rigify 보조도형이 함께 들어있음.
-      // 화면에는 첫 번째 실제 캐릭터 rig만 사용해서 렉/검은 보조도형을 제거.
-      const sourceRig = gltf.scene.getObjectByName('rig');
-      if(!sourceRig) throw new Error('Piggu rig node not found');
-      sourceRig.removeFromParent();
-      pigTemplate = sourceRig;
-      pigTemplate.updateMatrixWorld(true);
-      pigModelReady = true;
-      pigModelError = '';
-      setSub('3D 돼지 모델 준비 완료');
-      lastSignature = '';
-      maybeRebuildWorld();
-      return;
-    }catch(e){
-      lastErr = e;
-    }
-  }
-
-  pigModelError = 'piggu.glb를 불러오지 못했습니다.';
-  console.error('Piggu GLB load error:', lastErr);
-  setSub('3D 돼지 모델 로딩 실패 · public/piggu.glb 파일명/배포 상태 확인');
-}
-
-function clearNameLabels(){
-  const layer = $('nameLayer');
-  while(layer.firstChild) layer.removeChild(layer.firstChild);
-}
-
-function buildWorld(){
-  if(worldGroup) scene.remove(worldGroup);
-  clearNameLabels();
-
-  if(!pigModelReady || !pigTemplate){
-    worldGroup = null;
-    $('sceneInfo').innerHTML = pigModelError ? '3D 모델 오류' : '🐷 3D 돼지 로딩중...';
-    return;
-  }
-
-  worldGroup = new THREE.Group();
-  pigs = [];
-  finishShown = false;
-  $('winnerBanner').style.display = 'none';
-  $('winnerBanner').textContent = '';
-
-  const visualRacers = racersFor3D();
-  const count = visualRacers.length;
-  const totalParticipants = state.racers.length;
-
-  // 고퀄 리깅 캐릭터는 TOP10(+내 돼지)만 렌더해서 렉을 크게 줄임.
-  const laneGap = 2.70;
-  const startX = -22;
-  const finishX = 22;
-  const totalDepth = Math.max(22,count*laneGap+5);
-
-  const grass = new THREE.Mesh(
-    new THREE.PlaneGeometry(72,totalDepth+18),
-    new THREE.MeshStandardMaterial({color:0x6fbe5f,roughness:1})
-  );
-  grass.rotation.x = -Math.PI/2;
-  grass.position.y = -1.42;
-  worldGroup.add(grass);
-
-  const track = new THREE.Mesh(
-    new THREE.PlaneGeometry(54,totalDepth),
-    new THREE.MeshStandardMaterial({color:0xb47c4b,roughness:1})
-  );
-  track.rotation.x = -Math.PI/2;
-  track.position.y = -1.35;
-  worldGroup.add(track);
-
-  for(let i=0;i<count;i++){
-    const z = (i-(count-1)/2)*laneGap;
-    const line = new THREE.Mesh(
-      new THREE.PlaneGeometry(52,0.045),
-      new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.32})
-    );
-    line.rotation.x = -Math.PI/2;
-    line.position.set(0,-1.315,z+laneGap/2);
-    worldGroup.add(line);
-  }
-
-  const startLine = new THREE.Mesh(
-    new THREE.BoxGeometry(0.35,0.02,totalDepth),
-    new THREE.MeshBasicMaterial({color:0xffffff})
-  );
-  startLine.position.set(startX-0.8,-1.24,0);
-  worldGroup.add(startLine);
-
-  // 결승선은 타일 수를 줄여 draw call 절약
-  const finishLine = new THREE.Mesh(
-    new THREE.BoxGeometry(0.55,0.025,totalDepth),
-    new THREE.MeshBasicMaterial({color:0xffffff})
-  );
-  finishLine.position.set(finishX,-1.23,0);
-  worldGroup.add(finishLine);
-
-  for(let i=0;i<count;i++){
-    const z = (i-(count-1)/2)*laneGap;
-    const racer = visualRacers[i];
-    const globalIndex = state.racers.findIndex(r=>r.nickname===racer.nickname);
-    const pig = createPig(racer.nickname,globalIndex,totalParticipants,z,startX,finishX);
-    pigs.push(pig);
-    worldGroup.add(pig);
-  }
-
-  scene.add(worldGroup);
-
-  // 전체보기: 앞쪽 3/4 TV 카메라. 돼지들은 +X(결승선)을 바라본다.
-  camera.position.set(-6.5,5.6,14.5);
-  camera.lookAt(-17,0.2,0);
-
-  $('sceneInfo').innerHTML =
-    `참가자 ${totalParticipants}명<br>3D TOP 10${selectedPigName?' + 내 돼지':''}`;
-
-  renderParticipants();
-  refreshMyPigSelection();
-  renderTop10();
-  renderRanking();
-}
-
-function renderParticipants(){
-  $('list').innerHTML = state.racers.length
-    ? state.racers.map((r,i)=>`<div class="person">${i+1}. ${esc(r.nickname)}</div>`).join('')
-    : `<div class="person">아직 참가자가 없습니다.</div>`;
-}
-
-
-function refreshMyPigSelection(){
-  let found = false;
-  for(const pig of pigs){
-    const isMine = !!selectedPigName && pig.userData.name === selectedPigName;
-    if(pig.userData.myMarker) pig.userData.myMarker.visible = isMine;
-    if(pig.userData.label){
-      pig.userData.label.material.opacity = isMine ? 1 : (cameraMode === 'mine' ? 0.45 : 0.9);
-    }
-    if(isMine) found = true;
-  }
-  const badge = $('myPigBadge');
-  if(cameraMode === 'mine' && selectedPigName && found){
-    badge.style.display = 'block';
-  }else{
-    badge.style.display = 'none';
-  }
-}
-
-function currentPlaceOf(name){
-  const item = state.race?.order?.find(x=>x.nickname===name);
-  return item?.place || null;
-}
-
-function updateMyPigBadge(){
-  const badge = $('myPigBadge');
-  if(cameraMode !== 'mine' || !selectedPigName){
-    badge.style.display = 'none';
-    return;
-  }
-  const pig = pigs.find(p=>p.userData.name===selectedPigName);
-  if(!pig){
-    badge.style.display = 'none';
-    return;
-  }
-  const place = currentPlaceOf(selectedPigName);
-  badge.style.display = 'block';
-  badge.textContent = place ? `⭐ ${selectedPigName} · 현재 ${place}등` : `⭐ ${selectedPigName} · 내 돼지`;
-}
-
-function renderTop10(){
-  const box = $('top10List');
-  if(!state.race?.order?.length){
-    box.textContent = '레이스 대기중';
-    return;
-  }
-  box.innerHTML = state.race.order.slice(0,10).map((r,i)=>`
-    <div class="top10Row ${r.nickname===selectedPigName?'me':''}">
-      <span>${i+1}등</span><span>${esc(r.nickname)}</span>
-    </div>
-  `).join('');
-}
-
-function findMyPig(){
-  const q = $('myPigName').value.trim();
-  if(!q) return alert('내 닉네임을 입력하세요.');
-  const exact = state.racers.find(r=>r.nickname===q);
-  const partials = state.racers.filter(r=>r.nickname.toLowerCase().includes(q.toLowerCase()));
-  let target = exact;
-  if(!target && partials.length===1) target = partials[0];
-  if(!target){
-    if(partials.length>1) return alert('비슷한 닉네임이 여러 개 있습니다. 정확한 닉네임을 입력하세요.');
-    return alert('참가자 명단에서 해당 닉네임을 찾지 못했습니다.');
-  }
-  selectedPigName = target.nickname;
-  cameraMode = 'mine';
-  localStorage.setItem('galvent_my_pig', selectedPigName);
-  $('myPigName').value = selectedPigName;
-
-  // TOP10 밖 참가자여도 내 돼지는 3D 장면에 추가
-  lastSignature = '';
-  buildWorld();
-  refreshMyPigSelection();
-  updateMyPigBadge();
-  renderTop10();
-}
-
-function showAllPigs(){
-  cameraMode = 'all';
-  $('myPigBadge').style.display = 'none';
-  refreshMyPigSelection();
-}
-
-function updateCamera(){
-  if(cameraMode !== 'mine' || !selectedPigName) return;
-  const pig = pigs.find(p=>p.userData.name===selectedPigName);
-  if(!pig) return;
-
-  const pos = new THREE.Vector3();
-  pig.getWorldPosition(pos);
-
-  const desired = new THREE.Vector3(pos.x - 5.8,pos.y + 3.0,pos.z + 6.2);
-  camera.position.lerp(desired,0.075);
-
-  const look = new THREE.Vector3(pos.x + 2.0,pos.y + 0.55,pos.z);
-  camera.lookAt(look);
-}
-
+function renderParticipants(){$('list').innerHTML=state.racers.length?state.racers.map((r,i)=>`<div class="person">${i+1}. ${esc(r.nickname)}</div>`).join(''):'<div class="person">아직 참가자가 없습니다.</div>'}
 function renderRanking(){
-  if(!state.race?.order?.length){
-    $('ranking').innerHTML = `<div class="rankRow"><span>순위 없음</span><span>레이스 대기중</span></div>`;
-    return;
-  }
-  $('ranking').innerHTML = state.race.order.map((r,i)=>`
-    <div class="rankRow ${i===0?'top1':''}">
-      <span>${i+1}위. ${esc(r.nickname)}</span>
-      <span>${i===0?'🏆':''}</span>
-    </div>
-  `).join('');
+  if(!state.race?.order?.length||Date.now()-state.race.startedAt<durationMs){$('ranking').innerHTML='<div class="rankRow"><span>레이스 종료 후 공개</span><span>🏁</span></div>';return}
+  $('ranking').innerHTML=state.race.order.map((r,i)=>`<div class="rankRow ${i===0?'top1':''}"><span>${i+1}위. ${esc(r.nickname)}</span><span>${i===0?'🏆':''}</span></div>`).join('')
 }
-
-function maybeRebuildWorld(){
-  const sig = JSON.stringify({
-    racers: state.racers.map(r=>r.nickname),
-    startedAt: state.race?.startedAt || 0,
-    selectedPigName
-  });
-  if(sig !== lastSignature){
-    lastSignature = sig;
-    buildWorld();
-  }
+function updateTop10(now){
+  const box=$('top10List');
+  if(!state.race){box.textContent='레이스 대기중';return}
+  const p=(now-state.race.startedAt)/durationMs;
+  const rows=p>=1?state.race.order.slice(0,10).map((r,i)=>({nickname:r.nickname,label:`${i+1}등`})):liveOrder(now).slice(0,10).map((r,i)=>({nickname:r.nickname,label:`${i+1}위`}));
+  const sig=rows.map(x=>x.nickname).join('|');
+  if(sig!==lastLiveTop.join('|')){lastLiveTop=rows.map(x=>x.nickname);box.innerHTML=rows.map(r=>`<div class="top10Row ${r.nickname===selectedPigName?'me':''}"><span>${r.label}</span><span>${esc(r.nickname)}</span></div>`).join('')}
 }
-
-function updateOverlay(){
-  if(!state.race){
-    $('timer').textContent = '대기 중';
-    return;
-  }
-  const elapsed = Date.now() - state.race.startedAt;
-  const left = Math.max(0, durationMs - elapsed);
-  $('timer').textContent = left > 0 ? `⏱ ${(left/1000).toFixed(1)}초` : '🏁 FINISH!';
-  if(left <= 0 && state.race.winner && !finishShown){
-    finishShown = true;
-    $('winnerBanner').style.display = 'block';
-    $('winnerBanner').textContent = `🏆 1등 ${state.race.winner} 🐷 춤 타임!`;
-  }
+function updateOverlay(now){
+  if(!state.race){$('timer').textContent='대기 중';return}
+  const left=Math.max(0,durationMs-(now-state.race.startedAt)); $('timer').textContent=left>0?`⏱ ${(left/1000).toFixed(1)}초`:'🏁 FINISH!';
+  if(left<=0&&state.race.winner&&!finishShown){finishShown=true;$('winnerBanner').style.display='block';$('winnerBanner').textContent=`🏆 1등 ${state.race.winner} 🐷`;renderRanking()}
 }
-
-function animatePig(pig, elapsedSec, rankMap){
-  const data = pig.userData;
-  const rig = data.rig;
-  const total = Math.max(1,state.racers.length);
-  const place = rankMap.get(data.name) || (data.index+1);
-
-  let progress = 0;
-  if(state.race){
-    progress = Math.min(1,Math.max(0,(Date.now()-state.race.startedAt)/durationMs));
-  }
-
-  const phase = elapsedSec*9.0 + data.seed*1.30;
-  const stride = Math.sin(phase);
-  let x = data.startX;
-  let winnerDance = false;
-
-  if(state.race){
-    const finishBias = place===1
-      ? 1.018
-      : 0.91-((place-2)/Math.max(1,total-1))*0.25;
-
-    const wobble = Math.sin(elapsedSec*3.0+data.seed*4.3)*(1-progress)*0.30;
-    const pct = progress<1
-      ? Math.max(0,Math.min(1,progress*finishBias+wobble*0.014))
-      : (place===1 ? 1.025 : Math.max(0.80,0.985-place*0.0024));
-
-    x = THREE.MathUtils.lerp(data.startX,data.finishX,pct);
-
-    if(progress>=1 && place===1){
-      winnerDance = true;
-      x = data.finishX+0.7;
-    }
-  }
-
-  pig.position.x = x;
-  pig.position.z = data.laneZ;
-
-  // Character orientation never changes during the race: always face the finish (+X).
-  data.facing.rotation.y = Math.PI/2;
-
-  if(winnerDance){
-    pig.position.y = data.baseY + Math.abs(Math.sin(elapsedSec*6))*0.10;
-
-    // Simple safe celebration using direction targets instead of raw joint Euler guesses.
-    aimBoneModel(rig,'armL', 0.20,0.65, 0.73);
-    aimBoneModel(rig,'armR',-0.20,0.65, 0.73);
-    aimBoneModel(rig,'forearmL', 0.10,0.72, 0.68);
-    aimBoneModel(rig,'forearmR',-0.10,0.72, 0.68);
-    return;
-  }
-
-  const moving = state.race ? 1 : 0.04;
-
-  // Small runner bounce only; never float high above the track.
-  pig.position.y = data.baseY + Math.max(0,Math.sin(phase*2))*0.045*moving;
-
-  /*
-    Native Piggu axes:
-      X = left/right
-      Y = up
-      Z = face/forward
-    We aim each deform bone by direction in that coordinate system.
-    This is much safer than rotating Rigify local axes directly.
-  */
-
-  // Human-style opposite arm/leg swing.
-  const leftLegZ  =  stride*0.46*moving;
-  const rightLegZ = -stride*0.46*moving;
-
-  const leftArmZ  = -stride*0.58*moving;
-  const rightArmZ =  stride*0.58*moving;
-
-  // Upper arms: mostly down, slightly out, swinging front/back.
-  aimBoneModel(rig,'armL', 0.18,-0.80,leftArmZ);
-  aimBoneModel(rig,'armR',-0.18,-0.80,rightArmZ);
-
-  // Elbows stay bent instead of straight "zombie" arms.
-  aimBoneModel(rig,'forearmL', 0.08,-0.42,0.78 + leftArmZ*0.22);
-  aimBoneModel(rig,'forearmR',-0.08,-0.42,0.78 + rightArmZ*0.22);
-
-  // Thighs alternate.
-  aimBoneModel(rig,'thighL', 0.09,-0.92,leftLegZ);
-  aimBoneModel(rig,'thighR',-0.09,-0.92,rightLegZ);
-
-  // Bend the knee more when that leg is trailing behind.
-  const bendL = Math.max(0,-stride)*moving;
-  const bendR = Math.max(0, stride)*moving;
-
-  aimBoneModel(rig,'legL',
-    0.06,
-    -0.94 + bendL*0.28,
-    -0.18 - bendL*0.55
-  );
-  aimBoneModel(rig,'legR',
-    -0.06,
-    -0.94 + bendR*0.28,
-    -0.18 - bendR*0.55
-  );
-
-  // Feet inherit the shin movement; only a mild forward direction keeps them from flipping.
-  aimBoneModel(rig,'footL', 0.03,-0.30,0.95);
-  aimBoneModel(rig,'footR',-0.03,-0.30,0.95);
+function updateMyBadge(){
+  const b=$('myPigBadge'); if(cameraMode!=='mine'||!selectedPigName){b.style.display='none';return}
+  if(!state.racers.some(r=>r.nickname===selectedPigName)){b.style.display='none';return}
+  b.style.display='block'; const pl=getPlace(selectedPigName); b.textContent=state.race&&Date.now()-state.race.startedAt>=durationMs&&pl?`⭐ ${selectedPigName} · 최종 ${pl}등`:`⭐ ${selectedPigName} · 내 돼지`;
 }
-
-function updateNameLabels(){
-  if(!camera || !renderer) return;
-  const wrap = $('sceneWrap');
-  const w = wrap.clientWidth;
-  const h = wrap.clientHeight;
-  const order = state.race?.order || [];
-  const placeMap = new Map(order.map(x=>[x.nickname,x.place]));
-
-  for(const pig of pigs){
-    const d = pig.userData;
-    const el = d.labelEl;
-    if(!el) continue;
-
-    pig.getWorldPosition(_tmpV);
-    _tmpV.y += Math.max(1.0,d.displayHeight+0.25);
-    _tmpV.project(camera);
-
-    const onScreen =
-      _tmpV.z>-1 && _tmpV.z<1 &&
-      _tmpV.x>-1.08 && _tmpV.x<1.08 &&
-      _tmpV.y>-1.10 && _tmpV.y<1.10;
-
-    if(!onScreen){
-      el.style.display = 'none';
-      continue;
-    }
-
-    const x = (_tmpV.x*0.5+0.5)*w;
-    const y = (-_tmpV.y*0.5+0.5)*h;
-    el.style.display = 'block';
-    el.style.transform = `translate(-50%,-100%) translate(${x}px,${y}px)`;
-
-    const place = placeMap.get(d.name);
-    el.className = 'pigNameTag' +
-      (place && place<=10 ? ' top10' : '') +
-      (d.name===selectedPigName ? ' mine' : '');
-
-    if(d.name===selectedPigName){
-      el.textContent = `⭐ ${place ? place+'등 · ' : ''}${d.name}`;
-    }else if(place && place<=10){
-      el.textContent = `${place}등 · ${d.name}`;
-    }else{
-      el.textContent = d.name;
-    }
-  }
+function findMyPig(){
+  const q=$('myPigName').value.trim(); if(!q)return alert('내 닉네임을 입력하세요.');
+  const exact=state.racers.find(r=>r.nickname===q), parts=state.racers.filter(r=>r.nickname.toLowerCase().includes(q.toLowerCase())); let target=exact||((parts.length===1)?parts[0]:null);
+  if(!target)return alert(parts.length>1?'비슷한 닉네임이 여러 개 있습니다. 정확하게 입력하세요.':'참가자 명단에서 닉네임을 찾지 못했습니다.');
+  selectedPigName=target.nickname; cameraMode='mine'; localStorage.setItem('galvent_my_pig',selectedPigName); $('myPigName').value=selectedPigName; lastSig=''; updateMyBadge()
 }
-
-function updateAllCamera(){
-  if(cameraMode !== 'all' || !pigs.length) return;
-
-  const focusX = pigs.reduce((a,p)=>a+p.position.x,0)/pigs.length;
-  const visualDepth = Math.max(28,pigs.length*2.70+6);
-
-  // Camera sits in front of the racers (+X), so we actually see eyes/faces.
-  // Diagonal Z offset keeps the "TV race" perspective.
-  const desired = new THREE.Vector3(
-    focusX+15.5,
-    5.6,
-    Math.max(13.5,visualDepth*0.48)
-  );
-
-  camera.position.lerp(desired,0.05);
-  camera.lookAt(focusX+1.0,-0.05,0);
-}
-
-let lastPerfFrame = 0;
-let perfTick = 0;
-
-function animate(now=0){
-  requestAnimationFrame(animate);
-
-  // 30fps 제한: 참가자가 많아도 브라우저가 과하게 GPU/CPU를 쓰지 않게 함
-  if(now - lastPerfFrame < 41) return;
-  lastPerfFrame = now;
-  perfTick++;
-
-  const t = clock.getElapsedTime();
-  updateOverlay();
-  const rankMap = new Map((state.race?.order || []).map(x=>[x.nickname,x.place]));
-  pigs.forEach(p => animatePig(p,t,rankMap));
-  updateCamera();
-  updateAllCamera();
-
-  if(perfTick % 3 === 0){
-    updateNameLabels();
-  }
-  if(perfTick % 9 === 0){
-    updateMyPigBadge();
-  }
-
-  renderer.render(scene,camera);
-}
+function showAllPigs(){cameraMode='all';lastSig='';$('myPigBadge').style.display='none'}
 
 async function poll(){
   try{
-    state = await api('/api/state');
-    maybeRebuildWorld();
-    updateOverlay();
-    setStatus(`참가자 ${state.racers.length} / 200명`);
-    if(!state.race){
-      setSub('댓글을 불러온 뒤 레이스를 시작할 수 있습니다.');
-    }else{
-      const elapsed = Date.now() - state.race.startedAt;
-      if(elapsed < durationMs){
-        setSub('레이스 진행 중...');
-      }else{
-        setSub(`레이스 종료 · 1등 ${state.race.winner}`);
-      }
-    }
-  }catch(e){
-    setSub('서버 연결을 확인하세요.');
-  }
+    state=await api('/api/state'); setStatus(`참가자 ${state.racers.length} / 200명`); $('sceneInfo').innerHTML=`참가자 ${state.racers.length}명<br>30초 레이스`; renderParticipants(); renderRanking(); lastSig='';
+    if(!state.race)setSub('댓글을 불러온 뒤 레이스를 시작할 수 있습니다.');
+    else setSub(Date.now()-state.race.startedAt<durationMs?'레이스 진행 중...':`레이스 종료 · 1등 ${state.race.winner}`);
+  }catch(e){setSub('서버 연결을 확인하세요.')}
 }
-
 async function loadComments(){
-  const key = $('key').value.trim();
-  const url = $('post').value.trim();
-  if(!key) return alert('ADMIN_KEY를 입력하세요.');
-  if(!url) return alert('디시 게시글 주소를 입력하세요.');
+  const key=$('key').value.trim(),url=$('post').value.trim(); if(!key)return alert('ADMIN_KEY를 입력하세요.'); if(!url)return alert('디시 게시글 주소를 입력하세요.');
   setSub('댓글 참가자 불러오는 중...');
-  try{
-    const d = await api('/api/admin/import',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer ' + key},
-      body:JSON.stringify({url})
-    });
-    await poll();
-    alert(`댓글 ${d.commentCount ?? '-'}개 / 참가자 ${d.count}명 불러왔습니다.`);
-    setSub(`댓글 ${d.commentCount ?? '-'}개 → 참가자 ${d.count}명`);
-  }catch(e){
-    alert(e.message);
-    setSub(e.message);
-  }
+  try{const d=await api('/api/admin/import',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({url})});await poll();alert(`댓글 ${d.commentCount??'-'}개 / 참가자 ${d.count}명 불러왔습니다.`)}catch(e){alert(e.message);setSub(e.message)}
 }
-
 async function startRace(){
-  const key = $('key').value.trim();
-  if(!key) return alert('ADMIN_KEY를 입력하세요.');
-  if(!state.racers.length) return alert('먼저 댓글을 불러오세요.');
-  if(!confirm(`${state.racers.length}명으로 30초 레이스를 시작할까요?`)) return;
-  try{
-    await api('/api/admin/start',{
-      method:'POST',
-      headers:{'Authorization':'Bearer ' + key}
-    });
-    finishShown = false;
-    $('winnerBanner').style.display = 'none';
-    await poll();
-
-    if(musicEnabled){
-      try{
-        bgm.currentTime = 0;
-        await bgm.play();
-      }catch(e){
-        console.log('음악 자동재생 차단 또는 파일 없음');
-      }
-    }
-  }catch(e){
-    alert(e.message);
-  }
+  const key=$('key').value.trim(); if(!key)return alert('ADMIN_KEY를 입력하세요.'); if(!state.racers.length)return alert('먼저 댓글을 불러오세요.'); if(!confirm(`${state.racers.length}명으로 30초 레이스를 시작할까요?`))return;
+  try{await api('/api/admin/start',{method:'POST',headers:{'Authorization':'Bearer '+key}});finishShown=false;$('winnerBanner').style.display='none';await poll();if(musicEnabled){try{bgm.currentTime=0;await bgm.play()}catch(e){}}}catch(e){alert(e.message)}
 }
-
 async function resetRace(){
-  const key = $('key').value.trim();
-  if(!key) return alert('ADMIN_KEY를 입력하세요.');
-  if(!confirm('참가자와 레이스를 전부 초기화할까요?')) return;
-  try{
-    await api('/api/admin/reset',{
-      method:'POST',
-      headers:{'Authorization':'Bearer ' + key}
-    });
-    bgm.pause();
-    bgm.currentTime = 0;
-    finishShown = false;
-    state = {racers:[],race:null};
-    lastSignature = '';
-    await poll();
-  }catch(e){
-    alert(e.message);
-  }
+  const key=$('key').value.trim(); if(!key)return alert('ADMIN_KEY를 입력하세요.'); if(!confirm('참가자와 레이스를 전부 초기화할까요?'))return;
+  try{await api('/api/admin/reset',{method:'POST',headers:{'Authorization':'Bearer '+key}});bgm.pause();bgm.currentTime=0;finishShown=false;state={racers:[],race:null};lastSig='';$('winnerBanner').style.display='none';await poll()}catch(e){alert(e.message)}
 }
-
-function toggleMusic(){
-  musicEnabled = !musicEnabled;
-  $('musicBtn').textContent = musicEnabled ? '🎵 음악 ON' : '🔇 음악 OFF';
-  if(!musicEnabled){
-    bgm.pause();
-  }else if(state.race && (Date.now() - state.race.startedAt) < durationMs){
-    bgm.play().catch(()=>{});
-  }
-}
-
-window.loadComments = loadComments;
-window.startRace = startRace;
-window.resetRace = resetRace;
-window.toggleMusic = toggleMusic;
-window.findMyPig = findMyPig;
-window.showAllPigs = showAllPigs;
-
-initScene();
-loadPigModel();
-if(selectedPigName) $('myPigName').value = selectedPigName;
-poll();
-setInterval(poll, 1500);
+function toggleMusic(){musicEnabled=!musicEnabled;$('musicBtn').textContent=musicEnabled?'🎵 음악 ON':'🔇 음악 OFF';if(!musicEnabled)bgm.pause()}
+window.loadComments=loadComments;window.startRace=startRace;window.resetRace=resetRace;window.toggleMusic=toggleMusic;window.findMyPig=findMyPig;window.showAllPigs=showAllPigs;
+if(selectedPigName)$('myPigName').value=selectedPigName;
+poll();setInterval(poll,1800);requestAnimationFrame(renderFrame);
 </script>
 </body>
 </html>
